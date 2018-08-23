@@ -1,0 +1,139 @@
+<script src="/touchscreentoolkit/lib/javascripts/standard.js"> </script>
+<style type="text/css">
+  body {
+    -moz-user-select:none;
+	font-family: Arial,sans-serif;
+  }
+
+  #stats {
+    width:98%;
+    margin:10px;
+    background:white;
+    -moz-user-select:none;
+  }
+
+	#stats a {
+		border-radius: 7px; 
+		background-color: #669999;
+		border-bottom: 1px outset black;
+		border-style: outset;
+		border-top: 1px outset black;
+		color: white;
+		display: block;
+		padding: 10px 16px 10px 10px;
+		text-align: center;
+		text-decoration: none;
+	}
+
+  #stats td {
+    width: 310px;
+ 		border-radius: 7px; 
+ 		color:white;
+		cursor:pointer;
+  }
+
+  #table_div {
+    overflow:auto;
+    height: 280px;
+    background-color: white;
+    border: 1px #eee solid;
+    border-width: 1px;
+  }
+  
+	.messageBar {
+		/*  height: 1em;*/
+		height: 70px;
+		width: 515px;
+		position: absolute;
+		top: 0px;
+		left: 260px;
+		font-size: 2.35em;
+		float: right;
+		text-align: left;
+		z-index: 842;
+		border: thin solid black;
+		background: #40f999;
+		display: none;
+		padding: 20px;   
+		border: 5px outset #40f999;
+		border-radius: 15px;
+		z-index:11000;
+	}
+</style>
+
+<script>
+
+	function showDhisStatus(){
+		    var div = document.createElement("div");
+		    div.id = "progress_bar";
+		    div.className = "messageBar";
+		    div.innerHTML = "Updating DHIS2. Please wait...";
+		    
+		    document.getElementById("tab").appendChild(div);
+		
+		document.getElementById("progress_bar").style.display = "block";
+	}
+
+  function dhis_update_msg() {
+		showDhisStatus()
+  }
+  
+  function setInnerHtmlData(id,result,path, target) {
+    td = document.getElementById(id);
+    if(result == "Graphical Reports")
+    {
+    	td.innerHTML =   result 
+      td.setAttribute("bgcolor","darkgoldenrod")
+      td.setAttribute("align","center")
+      td.setAttribute("onClick","window.location = '/clinic/reports_tab_graphs'")
+
+    }
+    else
+    {
+    	td.innerHTML = "<a href ='" + path + "' target='" + (target ? target : "_parent") + "'>" +  result + "</a>"
+    }
+  }
+  
+  function clear() {
+  	alert("ola")
+  }
+</script>
+
+<!--base target="_parent"-->
+<div id="tab">
+    <h2>Select report to view</h2>
+    <div id="table_div">
+
+      <table id="stats">
+        <% count = @reports.length  unless @reports.blank? %>
+        <% (@reports || []).each do |name,path|
+          count_up = 0
+          count = 0 if @reports.blank?
+        %>
+          <% while count_up < count %>
+            <tr>
+              <td id = "<%=count_up+= 1%>"></td>
+              <td id = "<%=count_up+= 1%>"></td>
+              <td id = "<%=count_up+= 1%>"></td>
+            </tr>
+          <%end unless @reports.blank?%>
+        <%end%>
+      </table>
+
+
+      <%
+      count = @reports.length  unless @reports.blank?
+      @reports.sort.reverse.map do | name , path | 
+      %>
+        <script>
+
+          	setInnerHtmlData("<%=count%>","<%=name%>","<%=path%>",
+              "<%= (name.include?("Data Cleaning Tools") || name.include?("Supervision") ? "_self" : "_parent") %>" );
+
+        </script>
+        <%count-=1%>
+      <%end%>
+
+    </div>
+  </div>
+<!--/base-->
