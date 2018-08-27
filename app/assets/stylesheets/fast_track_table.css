@@ -1,0 +1,43 @@
+#clearButton {
+  display: inline;
+}
+
+#fast-track-table {
+  height: 90%;
+  width: 100%;
+  border-collapse: collapse;
+  border-width: 0px;
+  font-size: 20px;
+}
+
+#inclusion, #exclusion {
+  font-size: 25px;
+  font-weight: bold;
+}
+
+#left_table {
+  border-style: solid;
+  border-width: 0px 1px 0px 0px;
+}
+
+#exclusion {
+  width: 52%;
+}
+
+.exclusion_titles {
+  width: 62%;
+}
+
+.inclusion_titles {
+  width: 58%;
+}
+
+#left_table, #right_table {
+ border-collapse: collapse;
+}
+
+#left_table td, #right_table td {
+ padding-bottom: 40px;
+}
+
+

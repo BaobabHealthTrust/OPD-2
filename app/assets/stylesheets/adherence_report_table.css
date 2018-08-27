@@ -1,0 +1,47 @@
+.summary {
+  width: 98% !important;
+}
+
+#adherence_report_table {
+  width: 100%;
+  border-collapse: collapse;
+  border-width: 0px;
+  font-size: 20px;
+}
+
+
+#adherence_report_table th {
+  font-weight: bold;
+}
+
+.line-separator td {
+  border-style: none;
+  padding-bottom: 25px;
+}
+
+.row-headers {
+  font-weight: bold;
+}
+
+.row-data {
+  padding-left: 65px !important;
+}
+
+.set-data {
+  text-align: right;
+  padding-right: 5px;
+}
+
+.tr-headers {
+  background-color: lightgrey;
+}
+
+#header-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-width: 0px;
+}
+
+#header-table td {
+  border-style: none;
+}

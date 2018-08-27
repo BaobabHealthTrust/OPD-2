@@ -1,0 +1,28 @@
+
+.recommendation-table {
+	display: table;
+  width: 100%;
+  border-collapse: collapse;
+	border: 2px solid orange;
+	color: orange;
+  background-color: oldlace
+}
+
+.recommendation-table-row {
+  display: table-row;
+}
+
+.recommendation-table-cell {
+  display: table-cell;
+  border-style: solid;
+  border-width: 1px;
+  padding: 5px;
+}
+
+.header {
+  background-color: lightgrey;
+}
+
+.provider-responses {
+	color: black;
+}

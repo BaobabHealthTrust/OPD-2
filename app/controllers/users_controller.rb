@@ -1,0 +1,3 @@
+class UsersController < GenericUsersController
+
+end

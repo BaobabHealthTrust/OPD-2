@@ -19,30 +19,56 @@ class GenericApplicationController < ActionController::Base
   ConceptName
   Concept
   Settings
-	require "fastercsv"
-
 	helper :all
 	helper_method :next_task
-	filter_parameter_logging :password
-	before_filter :authenticate_user!, :except => ['login', 'logout','remote_demographics',
-    'create_remote', 'mastercard_printable', 'get_token',
-    'disease_surveillance_api']
+	#filter_parameter_logging :password
 
-  before_filter :set_current_user, :except => ['login', 'logout','remote_demographics',
-    'create_remote', 'mastercard_printable', 'get_token',
-    'disease_surveillance_api']
+  before_action :authenticate_user!, :except => ['normal_visits','transfer_in_visits','re_initiation_visits','patients_without_any_encs',
+                                                 'login', 'logout','remote_demographics','art_stock_info', 'create_remote', 'mastercard_printable', 'get_token',
+                                                 'cohort','demographics_remote', 'export_on_art_patients', 'art_summary',
+                                                 'art_summary_dispensation', 'print_rules', 'rule_variables', 'print',
+                                                 'new_prescription', 'search_for_drugs','mastercard_printable',
+                                                 'remote_app_search', 'remotely_reassign_new_identifier',
+                                                 'create_person_from_anc', 'create_person_from_dmht',
+                                                 'find_person_from_dmht', 'reassign_remote_identifier',
+                                                 'revised_cohort_to_print', 'revised_cohort_survival_analysis_to_print',
+                                                 'revised_women_cohort_survival_analysis_to_print',
+                                                 'revised_children_cohort_survival_analysis_to_print', 'render_date_enrolled_in_art', 'search_remote_people',
+                                                 'login', 'logout', 'create'
+  ]
 
-	before_filter :location_required, :except => ['login', 'logout', 'location',
-    'demographics','create_remote',
-    'mastercard_printable',
-    'remote_demographics', 'get_token', 'single_sign_in',
-    'disease_surveillance_api']
-=begin
-  before_filter :set_auto_session, :except => ['login', 'logout','remote_demographics',
-    'create_remote', 'mastercard_printable', 'get_token', 'set_datetime', 'reset_datetime',
-    'disease_surveillance_api']
-=end
-  before_filter :set_dde_token
+  before_action :set_current_user, :except => ['login', 'logout','remote_demographics','art_stock_info', 'sign_in', 'new',
+                                               'create_remote', 'mastercard_printable', 'get_token',
+                                               'cohort','demographics_remote', 'export_on_art_patients', 'art_summary',
+                                               'art_summary_dispensation', 'print_rules', 'rule_variables',
+                                               'print','new_prescription', 'search_for_drugs',
+                                               'mastercard_printable', 'remote_app_search',
+                                               'remotely_reassign_new_identifier', 'create_person_from_anc',
+                                               'create_person_from_dmht', 'find_person_from_dmht',
+                                               'reassign_remote_identifier','revised_cohort_to_print',
+                                               'revised_cohort_survival_analysis_to_print',
+                                               'revised_women_cohort_survival_analysis_to_print',
+                                               'revised_children_cohort_survival_analysis_to_print', 'render_date_enrolled_in_art', 'search_remote_people'
+  ]
+
+  before_action :location_required, :except => ['patients_without_any_encs','login', 'logout', 'location', 'new',
+                                                'demographics','create_remote',
+                                                'mastercard_printable','art_stock_info',
+                                                'remote_demographics', 'get_token',
+                                                'cohort','demographics_remote', 'export_on_art_patients', 'art_summary',
+                                                'art_summary_dispensation', 'print_rules', 'rule_variables',
+                                                'print','new_prescription', 'search_for_drugs','mastercard_printable',
+                                                'remote_app_search', 'remotely_reassign_new_identifier',
+                                                'create_person_from_anc', 'create_person_from_dmht',
+                                                'find_person_from_dmht', 'reassign_remote_identifier',
+                                                'revised_cohort_to_print', 'revised_cohort_survival_analysis_to_print',
+                                                'revised_women_cohort_survival_analysis_to_print',
+                                                'revised_children_cohort_survival_analysis_to_print', 'render_date_enrolled_in_art', 'search_remote_people'
+  ]
+
+
+  skip_before_action :verify_authenticity_token
+  before_action :set_dde_token
 
   def set_dde_token
     if create_from_dde_server
@@ -64,16 +90,16 @@ class GenericApplicationController < ActionController::Base
 		@backtrace = exception.backtrace.join("\n") unless exception.nil?
 		logger.info @message
 		logger.info @backtrace
-		render :file => "#{RAILS_ROOT}/app/views/errors/error.rhtml", :layout=> false, :status => 404
-	end if RAILS_ENV == 'development' || RAILS_ENV == 'test'
+		render :file => "#{Rails.root.to_s}/app/views/errors/error.rhtml", :layout=> false, :status => 404
+	end if Rails.env == 'development' || Rails.env == 'test'
 
   def rescue_action(exception)
     @message = exception.message
     @backtrace = exception.backtrace.join("\n") unless exception.nil?
     logger.info @message
     logger.info @backtrace
-    render :file => "#{RAILS_ROOT}/app/views/errors/error.rhtml", :layout=> false, :status => 404
-  end if RAILS_ENV == 'production'
+    render :file => "#{Rails.root.to_s}/app/views/errors/error.rhtml", :layout=> false, :status => 404
+  end if Rails.env == 'production'
 
   def print_and_redirect(print_url, redirect_url, message = "Printing, please wait...", show_next_button = false, patient_id = nil)
     @print_url = print_url
@@ -152,11 +178,11 @@ class GenericApplicationController < ActionController::Base
   def concept_set_diff(concept_name, exclude_concept_name)
     concept_id = ConceptName.find_by_name(concept_name).concept_id
     
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order(:sort_weight)
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     exclude_concept_id = ConceptName.find_by_name(exclude_concept_name).concept_id
-    exclude_set = ConceptSet.find_all_by_concept_set(exclude_concept_id, :order => 'sort_weight')
+    exclude_set = ConceptSet.where(concept_set: exclude_concept_id).order(:sort_weight)
     exclude_options = exclude_set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     final_options = (options - exclude_options)
@@ -176,8 +202,8 @@ class GenericApplicationController < ActionController::Base
   end
 
   def current_user_roles
-    user_roles = UserRole.find(:all,:conditions =>["user_id = ?", current_user.id]).collect{|r|r.role}
-    RoleRole.find(:all,:conditions => ["child_role IN (?)", user_roles]).collect{|r|user_roles << r.parent_role}
+    user_roles = UserRole.where(["user_id = ?", current_user.id]).collect{|r|r.role}
+    RoleRole.where(["child_role IN (?)", user_roles]).collect{|r|user_roles << r.parent_role}
     return user_roles.uniq
   end
 
