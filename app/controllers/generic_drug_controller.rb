@@ -2,7 +2,7 @@ class GenericDrugController < ApplicationController
 
   def name
     @names = Drug.find(:all,:conditions =>["name LIKE ?","%" + params[:search_string] + "%"]).collect{|drug| drug.name}
-    render :text => "<li>" + @names.map{|n| n } .join("</li><li>") + "</li>"
+    render plain: ("<li>" + @names.map{|n| n } .join("</li><li>") + "</li>").html_safe
   end
 
   def delivery
@@ -25,7 +25,7 @@ class GenericDrugController < ApplicationController
   end
 
   def edit_stock
-    if request.method == :post
+    if request.post?
       obs = params[:observations]
       edit_reason = obs[0]['value_coded_or_text']
       encounter_datetime = obs[1]['value_datetime']
@@ -62,10 +62,8 @@ class GenericDrugController < ApplicationController
     #TODO
 #need to redo the SQL query
     encounter_type = PharmacyEncounterType.find_by_name("New deliveries").id
-    new_deliveries = Pharmacy.active.find(:all,
-      :conditions =>["pharmacy_encounter_type=?",encounter_type],
-      :order => "encounter_date DESC,date_created DESC")
-    
+    new_deliveries = Pharmacy.active.where(
+      ["pharmacy_encounter_type=?",encounter_type]).order("encounter_date DESC,date_created DESC")
     current_stock = {}
     new_deliveries.each{|delivery|
       current_stock[delivery.drug_id] = delivery if current_stock[delivery.drug_id].blank?
@@ -73,8 +71,8 @@ class GenericDrugController < ApplicationController
 
     @stock = {}
     current_stock.each{|delivery_id , delivery|
-      first_date = Pharmacy.active.find(:first,:conditions =>["drug_id =?",
-                   delivery.drug_id],:order => "encounter_date").encounter_date.to_date rescue nil
+      first_date = Pharmacy.active.where(["drug_id =?",
+                   delivery.drug_id]).order("encounter_date").first.encounter_date.to_date rescue nil
       next if first_date.blank?
       next if first_date > @end_date
 
@@ -158,7 +156,7 @@ class GenericDrugController < ApplicationController
     ids = Pharmacy.active.find(:all).collect{|p|p.drug_id} rescue []
     @names = Drug.find(:all,:conditions =>["name LIKE ? AND drug_id IN (?)","%" + 
           params[:search_string] + "%", ids]).collect{|drug| drug.name}
-    render :text => "<li>" + @names.map{|n| n } .join("</li><li>") + "</li>"
+    render plain: ("<li>" + @names.map{|n| n } .join("</li><li>") + "</li>").html_safe
   end
 
   def receive_products
@@ -213,7 +211,7 @@ class GenericDrugController < ApplicationController
 
     data = {}
 
-    Pharmacy.active.find_all_by_value_text(params[:barcode]).each { |entry|
+    Pharmacy.active.where(value_text: params[:barcode]).each { |entry|
 
       drug = Drug.find(entry.drug_id).name
       qty_size = entry.pack_size.blank? ? 60 : entry.pack_size.to_i
@@ -242,7 +240,7 @@ class GenericDrugController < ApplicationController
 
   def opd_drugs
     arv_concept_ids = MedicationService.arv_drugs.map(&:concept_id)
-    non_art_drugs = Drug.find(:all, :conditions => ["concept_id NOT IN (?)", arv_concept_ids], :limit => 20)
+    non_art_drugs = Drug.where(["concept_id NOT IN (?)", arv_concept_ids]).limit(20)
     return non_art_drugs
   end
 

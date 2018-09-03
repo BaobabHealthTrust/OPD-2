@@ -91,16 +91,16 @@ class Observation < ActiveRecord::Base
   def self.find_most_common_value(concept_question, answer_string, value_column = :value_text, limit = 10)
     answer_string = "%#{answer_string}%" if value_column == :value_text
     self.select("COUNT(*) as count, #{value_column} as value").where(["obs.concept_id = ? AND #{value_column} LIKE ?",
+                                                                             concept_question, answer_string]).group(value_column).order ("COUNT(*) DESC").limit(limit).map{|o| o.value }
+  end
 
-      end
-
-      def to_s(tags=[])
+  def to_s(tags=[])
         formatted_name = self.concept_name.typed(tags).name rescue nil
         formatted_name ||= self.concept_name.name rescue nil
         formatted_name ||= self.concept.concept_names.typed(tags).first.name || self.concept.fullname rescue nil
         formatted_name ||= self.concept.concept_names.first.name rescue 'Unknown concept name'
         "#{formatted_name}:  #{self.answer_string(tags)}"
-      end
+  end
 
       def name(tags=[])
         formatted_name = self.concept_name.tagged(tags).name rescue nil

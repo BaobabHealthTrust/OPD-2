@@ -5,10 +5,8 @@ class GenericDispensationsController < ApplicationController
 		#@prescriptions = @patient.orders.current.prescriptions.all
 		type = EncounterType.find_by_name('TREATMENT')
 		session_date = session[:datetime].to_date rescue Date.today
-		@prescriptions = Order.find(:all,
-      :joins => "INNER JOIN encounter e USING (encounter_id)",
-      :conditions => ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
-        type.id,@patient.id,session_date])
+		@prescriptions = Order.where(["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
+        type.id,@patient.id,session_date]).joins("INNER JOIN encounter e USING (encounter_id)")
 		@options = @prescriptions.map{|presc| [presc.drug_order.drug.name, presc.drug_order.drug_inventory_id]}
 
     @drug_order_hash = {}
@@ -18,7 +16,7 @@ class GenericDispensationsController < ApplicationController
     end
 
     la_concept_id = Concept.find_by_name("LA(Lumefantrine + arthemether)").concept_id
-    @quinine_drug_names = Drug.find(:all, :conditions => ["concept_id =?", la_concept_id]).collect{|d|d.name.squish}
+    @quinine_drug_names = Drug.where(["concept_id =?", la_concept_id]).collect{|d|d.name.squish}
 
 	end
 
@@ -128,9 +126,9 @@ class GenericDispensationsController < ApplicationController
 				duration = 0
 
 				if !estimate
-          regimen = Regimen.find(:first, :select => "regimen.*, regimen_drug_order.*", :joins => 'LEFT JOIN regimen_drug_order ON regimen.regimen_id = regimen_drug_order.regimen_id' ,
-            :conditions => ['min_weight <= ? AND max_weight > ?
-													AND program_id = 1 AND drug_inventory_id = ?', current_weight, current_weight, params[:drug_id]])
+          regimen = Regimen.select("regimen.*, regimen_drug_order.*").where(['min_weight <= ? AND max_weight > ?
+													AND program_id = 1 AND drug_inventory_id = ?', current_weight, current_weight, params[:drug_id]]).joins(
+              'LEFT JOIN regimen_drug_order ON regimen.regimen_id = regimen_drug_order.regimen_id' ).first
           if !regimen.blank?
             dose = regimen.dose
             frequency = regimen.frequency
@@ -230,7 +228,7 @@ class GenericDispensationsController < ApplicationController
       unless params[:location]
         redirect_to "/patients/treatment_dashboard?id=#{@patient.patient_id}&dispensed_order_id=#{@order_id}"
       else
-        render :text => 'complete' and return
+        render plain: 'complete' and return
       end
     end
   end  
@@ -252,12 +250,12 @@ class GenericDispensationsController < ApplicationController
       amounts << "#{obs.value_numeric.to_f}" unless obs.value_numeric.blank?
     end
     amounts = amounts.flatten.compact.uniq
-    render :text => "<li>" + amounts.join("</li><li>") + "</li>"
+    render plain: ("<li>" + amounts.join("</li><li>") + "</li>").html_safe
   end
 
   def current_dispensation_encounter(patient, date = Time.now(), provider = user_person_id)
     type = EncounterType.find_by_name("DISPENSING")
-    encounter = patient.encounters.find(:first,:conditions =>["DATE(encounter_datetime) = ? AND encounter_type = ?",date.to_date,type.id])
+    encounter = patient.encounters.where(["DATE(encounter_datetime) = ? AND encounter_type = ?",date.to_date,type.id]).first
     encounter ||= patient.encounters.create(:encounter_type => type.id,:encounter_datetime => date, :provider_id => provider)
   end
 
@@ -289,15 +287,13 @@ class GenericDispensationsController < ApplicationController
     concept_id = Concept.find_by_name("LA(Lumefantrine + arthemether)").concept_id
 		type = EncounterType.find_by_name('TREATMENT')
 		session_date = session[:datetime].to_date rescue Date.today
-		prescriptions = Order.find(:all,
-      :joins => "INNER JOIN encounter e USING (encounter_id)",
-      :conditions => ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
-        type.id,@patient.id,session_date])
+		prescriptions = Order.where(["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
+                                 type.id,@patient.id,session_date]).joins("INNER JOIN encounter e USING (encounter_id)")
 
     prescribed_drug_ids = prescriptions.map{|presc| presc.drug_order.drug_inventory_id}
     prescribed_drug_ids = [0] if prescribed_drug_ids.blank?
 
-    non_prescribed_drugs = Drug.find(:all, :conditions => ["concept_id =? AND drug_id NOT IN (?)",
+    non_prescribed_drugs = Drug.where(["concept_id =? AND drug_id NOT IN (?)",
         concept_id, prescribed_drug_ids])
     
 		@options = non_prescribed_drugs.map{|drug| [drug.name, drug.drug_id]}
@@ -442,8 +438,8 @@ EOF
   def all_orders_complete(patient, encounter_date)
     type = EncounterType.find_by_name('TREATMENT').id
 
-    current_treatment_encounters = Encounter.find(:all,
-      :conditions =>["patient_id = ? AND encounter_datetime BETWEEN ? AND ?
+    current_treatment_encounters = Encounter.where(
+        ["patient_id = ? AND encounter_datetime BETWEEN ? AND ?
 				AND encounter_type = ?",patient.id , 
         encounter_date.to_date.strftime('%Y-%m-%d 00:00:00'),
         encounter_date.to_date.strftime('%Y-%m-%d 23:59:59'),

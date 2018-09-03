@@ -90,7 +90,7 @@ class GenericApplicationController < ActionController::Base
 		@backtrace = exception.backtrace.join("\n") unless exception.nil?
 		logger.info @message
 		logger.info @backtrace
-		render :file => "#{Rails.root.to_s}/app/views/errors/error.rhtml", :layout=> false, :status => 404
+		render :file => "#{Rails.root.to_s}/app/views/errors/error", :layout=> false, :status => 404
 	end if Rails.env == 'development' || Rails.env == 'test'
 
   def rescue_action(exception)
@@ -303,8 +303,8 @@ class GenericApplicationController < ActionController::Base
 
   def has_patient_been_on_art_before(patient)
     on_art = false
-    patient_states = PatientProgram.find(:first, :conditions => ["program_id = ? AND location_id = ? AND patient_id = ?",      
-        Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id,
+    patient_states = PatientProgram.where(["program_id = ? AND location_id = ? AND patient_id = ?",
+        Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).first.id,
         Location.current_health_center,patient.id]).patient_states rescue []
 
     (patient_states || []).each do |state|

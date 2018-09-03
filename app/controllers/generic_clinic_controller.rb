@@ -148,47 +148,45 @@ class GenericClinicController < ApplicationController
       @today_above_14 = Encounter.statistics(@types,:joins => {:patient =>{:person => {}}},
         :conditions => ['DATEDIFF(NOW(), person.birthdate)/365 >= ? AND encounter_datetime BETWEEN ? AND ?',
           14, Date.today.strftime('%Y-%m-%d 00:00:00'), Date.today.strftime('%Y-%m-%d 23:59:59')])
-      @me_reg_below_14 = Patient.find(:all,:joins => [:person], :conditions => ['DATEDIFF(NOW(),
+      @me_reg_below_14 = Patient.where(['DATEDIFF(NOW(),
        person.birthdate)/365 < ? AND DATE(patient.date_created) =? AND patient.creator =? ',
-          14, Date.today, current_user.user_id]).count
-      @me_reg_above_14 = Patient.find(:all,:joins => [:person], :conditions => ['DATEDIFF(NOW(),
+          14, Date.today, current_user.user_id]).joins([:person]).count
+      @me_reg_above_14 = Patient.where(['DATEDIFF(NOW(),
        person.birthdate)/365 >= ? AND DATE(patient.date_created) =? AND patient.creator =? ',
-          14, Date.today, current_user.user_id]).count
-      @today_reg_below_14 = Patient.find(:all,:joins => [:person], :conditions => ['DATEDIFF(NOW(),
-       person.birthdate)/365 < ? AND DATE(patient.date_created) =?', 14, Date.today]).count
-      @today_reg_above_14 = Patient.find(:all,:joins => [:person], :conditions => ['DATEDIFF(NOW(),
-       person.birthdate)/365 >= ? AND DATE(patient.date_created) =? ', 14, Date.today]).count
+          14, Date.today, current_user.user_id]).joins(:person).count
+      @today_reg_below_14 = Patient.where(['DATEDIFF(NOW(),
+       person.birthdate)/365 < ? AND DATE(patient.date_created) =?', 14, Date.today]).joins(:person).count
+      @today_reg_above_14 = Patient.where(['DATEDIFF(NOW(),
+       person.birthdate)/365 >= ? AND DATE(patient.date_created) =? ', 14, Date.today]).joins(:person).count
 
-      @me_ret_pt_below_14 =  Encounter.find(:all, :joins => [:type, [:patient => :person] ],
-        :group=>'patient.patient_id', :conditions => ['encounter_type_id IN (?) AND
+      @me_ret_pt_below_14 =  Encounter.where(['encounter_type_id IN (?) AND
        DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =?  AND
        encounter.creator = ? AND DATEDIFF(NOW(),person.birthdate)/365 < ?',
-          EncounterType.find(:all, :conditions => ['name IN (?)',@types]).map(&:encounter_type_id),
-          Date.today, Date.today,current_user.user_id,14] ).count
+          EncounterType.where(['name IN (?)',@types]).map(&:encounter_type_id),
+          Date.today, Date.today,current_user.user_id,14] ).joins([:type, [:patient => :person] ]).group('patient.patient_id').count
       #raise  @me_ret_pt_below_14.inspect
-      @me_ret_pt_above_14 =  Encounter.find(:all, :joins => [:type, [:patient => :person] ],
-        :group=>'patient.patient_id', :conditions => ['encounter_type_id IN (?) AND
+      @me_ret_pt_above_14 =  Encounter.where(['encounter_type_id IN (?) AND
        DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =?  AND
        encounter.creator = ? AND DATEDIFF(NOW(),person.birthdate)/365 >= ?',
-          EncounterType.find(:all, :conditions => ['name IN (?)',@types]).map(&:encounter_type_id),
-          Date.today, Date.today,current_user.user_id,14] ).count
-      @ret_pt_below_14 =  Encounter.find(:all, :joins => [:type, [:patient => :person] ],
-        :group=>'patient.patient_id', :conditions => ['encounter_type_id IN (?) AND
-       DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =? AND DATEDIFF(NOW(),person.birthdate)/365 < ?',
-          EncounterType.find(:all, :conditions => ['name IN (?)',@types]).map(&:encounter_type_id),
-          Date.today, Date.today,14] ).count
+          EncounterType.where(['name IN (?)',@types]).map(&:encounter_type_id),
+          Date.today, Date.today,current_user.user_id,14]).joins([:type, [:patient => :person]]).group('patient.patient_id').count
 
-      @ret_pt_above_14 =  Encounter.find(:all, :joins => [:type, [:patient => :person] ],
-        :group=>'patient.patient_id', :conditions => ['encounter_type_id IN (?) AND
+      @ret_pt_below_14 =  Encounter.where(['encounter_type_id IN (?) AND
+       DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =? AND DATEDIFF(NOW(),person.birthdate)/365 < ?',
+          EncounterType.where(['name IN (?)',@types]).map(&:encounter_type_id),
+          Date.today, Date.today,14] ).group('patient.patient_id').joins([:type, [:patient => :person] ]).count
+
+      @ret_pt_above_14 =  Encounter.where(
+        ['encounter_type_id IN (?) AND
        DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =? AND DATEDIFF(NOW(),person.birthdate)/365 >= ?',
           EncounterType.find(:all, :conditions => ['name IN (?)',@types]).map(&:encounter_type_id),
-          Date.today, Date.today,14] ).count
+          Date.today, Date.today,14] ).joins([:type, [:patient => :person] ]).group('patient.patient_id').count
     end
 
     @user = current_user.name  rescue "Me"
 
     if simple_overview
-      render :template => 'clinic/overview_simple.rhtml' , :layout => false
+      render :template => 'clinic/overview_simple' , :layout => false
       return
     end
 
@@ -360,10 +358,8 @@ class GenericClinicController < ApplicationController
     diagnosis_set = CoreService.get_global_property_value("application_diagnosis_concept")
 		diagnosis_set = "Qech outpatient diagnosis list" if diagnosis_set.blank?
 		diagnosis_concept_set = ConceptName.find_by_name(diagnosis_set).concept
-		diagnosis_concepts = Concept.find(:all, :joins => [:concept_sets, :concept_names],
-      :conditions => ['concept_set = ?', diagnosis_concept_set.id] , :group => "concept.concept_id",
-      :order => "name ASC",
-      :limit => 20)
+		diagnosis_concepts = Concept.where(['concept_set = ?', diagnosis_concept_set.id]).joins([:concept_sets, :concept_names]).order(
+                                        "name ASC").group("concept.concept_id").limit(20)
 
     @diagnosis_hash = {}
 		diagnosis_concepts.each do |concept|
@@ -375,7 +371,7 @@ class GenericClinicController < ApplicationController
     @diagnosis_hash = @diagnosis_hash.sort_by{|k, v|v[:name]}
 
     @preferred_diagnoses = {}
-    preferred_diagnosis_concept_ids = GlobalProperty.find(:last, :conditions => ["property =?", 'preferred.diagnosis.concept_id']).property_value.split(", ") rescue []
+    preferred_diagnosis_concept_ids = GlobalProperty.where(["property =?", 'preferred.diagnosis.concept_id']).last.property_value.split(", ") rescue []
     preferred_diagnosis_concept_ids.each do |concept_id|
       diagnosis_name = Concept.find(concept_id).fullname
       @preferred_diagnoses[concept_id] = {:name => diagnosis_name}
@@ -389,11 +385,9 @@ class GenericClinicController < ApplicationController
 		diagnosis_set = CoreService.get_global_property_value("application_diagnosis_concept")
 		diagnosis_set = "Qech outpatient diagnosis list" if diagnosis_set.blank?
 		diagnosis_concept_set = ConceptName.find_by_name(diagnosis_set).concept
-		diagnosis_concepts = Concept.find(:all, :joins => [:concept_sets, :concept_names],
-      :conditions => ['concept_set = ? AND name LIKE ?', diagnosis_concept_set.id, '%' + params[:search_string] + '%'],
-      :group => "concept.concept_id",
-      :order => "name ASC",
-      :limit => 20)
+		diagnosis_concepts = Concept.where(
+       ['concept_set = ? AND name LIKE ?', diagnosis_concept_set.id, '%' + params[:search_string] + '%']
+           ).joins([:concept_sets, :concept_names]).group("concept.concept_id").order("name ASC").limit(20)
 
     diagnosis_hash = {}
 		diagnosis_concepts.each do |concept|
@@ -408,7 +402,7 @@ class GenericClinicController < ApplicationController
   def save_diagnoses
     ActiveRecord::Base.transaction do
       property_name = 'preferred.diagnosis.concept_id'
-      old_property = GlobalProperty.find(:last, :conditions => ["property =?", property_name])
+      old_property = GlobalProperty.where(["property =?", property_name]).last
       old_property.delete unless old_property.blank?
 
       new_property = GlobalProperty.new()
@@ -423,8 +417,8 @@ class GenericClinicController < ApplicationController
   def preferred_drugs
     @generic_drugs = MedicationService.generic
     @preferred_drugs = []
-    preferred_diagnosis_concept_ids = GlobalProperty.find(:last,
-      :conditions => ["property =?", 'preferred.drugs.concept_id']).property_value.split(", ") rescue []
+    preferred_diagnosis_concept_ids = GlobalProperty.where(["property =?", 'preferred.drugs.concept_id']
+       ).last.property_value.split(", ") rescue []
 
     preferred_diagnosis_concept_ids.each do |concept_id|
       drug_name = Concept.find(concept_id).fullname
@@ -457,7 +451,7 @@ class GenericClinicController < ApplicationController
   def save_preferred_drugs
     ActiveRecord::Base.transaction do
       property_name = 'preferred.drugs.concept_id'
-      old_property = GlobalProperty.find(:last, :conditions => ["property =?", property_name])
+      old_property = GlobalProperty.where(["property =?", property_name]).last
       old_property.delete unless old_property.blank?
 
       new_property = GlobalProperty.new()

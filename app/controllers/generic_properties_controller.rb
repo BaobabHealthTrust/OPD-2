@@ -105,7 +105,7 @@ class GenericPropertiesController < ApplicationController
       role = params[:role]['title']
       privileges = params[:role]['privileges']
 
-      RolePrivilege.find(:all,:conditions => ["role = ?",role]).each do | privilege |
+      RolePrivilege.where(["role = ?",role]).each do | privilege |
         privilege.destroy
       end
 	
@@ -125,7 +125,7 @@ class GenericPropertiesController < ApplicationController
         end
       end
     else
-      @privileges = Privilege.find(:all, :order => "privilege").collect{|r|r.privilege}
+      @privileges = Privilege.all.("privilege").collect{|r|r.privilege}
       @privilege_index = {}
       @role_privileges = {}
 
@@ -136,7 +136,7 @@ class GenericPropertiesController < ApplicationController
       end
 
       Role.find(:all).each do | role |
-        @role_privileges[role.role] = RolePrivilege.find(:all, :conditions =>["role = ?", role.role]).collect{ | rp |
+        @role_privileges[role.role] = RolePrivilege.where(["role = ?", role.role]).collect{ | rp |
           rp.privilege
         }.join(',')
       end
@@ -144,13 +144,12 @@ class GenericPropertiesController < ApplicationController
       #raise @privilege_index.to_yaml
       #,:conditions => ["privilege IN (?)",privileges])
       #@privileges = Privilege.find(:all)
-      @activities = RolePrivilege.find(:all).collect{|r|r.privilege}
+      @activities = RolePrivilege.all.collect{|r|r.privilege}
     end
   end
 
   def selected_roles
-    render :text => RolePrivilege.find(:all,
-      :conditions =>["role = ?",
+    render :text => RolePrivilege.where(["role = ?",
         params[:role]]).collect{|r|r.privilege.privilege}.join(',') and return
   end
 

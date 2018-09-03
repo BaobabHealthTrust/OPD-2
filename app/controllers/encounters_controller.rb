@@ -3,7 +3,7 @@ class EncountersController < GenericEncountersController
 
 	#call method to send data to dashboard application after_filter
   #only handle specific encounters
-  after_filter :only => [:create_complaints, :create, :void] do |c|
+  after_action :only => [:create_complaints, :create, :void] do |c|
     c.instance_eval do
       notes = params[:observations][0][:concept_name] rescue "" #TODO: Find a better way of this.
       encounters_to_process = ["NOTES","OUTPATIENT DIAGNOSIS"]
@@ -545,7 +545,7 @@ class EncountersController < GenericEncountersController
 		complaint_set = CoreService.get_global_property_value("application_presenting_complaint")
 		complaint_set = "PRESENTING COMPLAINT" if complaint_set.blank?
 		complaint_concept_set = ConceptName.find_by_name(complaint_set).concept
-		complaint_concepts = Concept.find(:all, :joins => :concept_sets, :conditions => ['concept_set = ?', complaint_concept_set.id])
+		complaint_concepts = Concept.where(['concept_set = ?', complaint_concept_set.id]).joins(:concept_sets)
 
 		valid_answers = complaint_concepts.map{|concept|
 			name = concept.fullname rescue nil
@@ -559,14 +559,14 @@ class EncountersController < GenericEncountersController
 
 		@suggested_answers = (previous_answers + valid_answers.sort!).reject{|answer| filter_list.include?(answer) }.uniq[0..10]
 		@suggested_answers = @suggested_answers - params[:search_filter].split(',') rescue @suggested_answers
-		render :text => "<li></li>" + "<li>" + @suggested_answers.join("</li><li>") + "</li>"
+		render plain:  ("<li></li>" + "<li>" + @suggested_answers.join("</li><li>") + "</li>").html_safe
 	end
 
 	#added this to ensure that we are able to get the detailed diagnosis set
 	def diagnosis_details
 		concept_name = params[:diagnosis_string]
 		options = concept_set(concept_name).flatten.uniq
-		render :text => "<li></li><li>" + options.join("</li><li>") + "</li>"
+		render plain:  ("<li></li><li>" + options.join("</li><li>") + "</li>").html_safe
 	end
 
 	#added this to ensure that we are able to get the detailed concept set
@@ -574,7 +574,7 @@ class EncountersController < GenericEncountersController
 		concept_name = params[:search_string]
 		options = concept_set(concept_name).flatten.uniq
 
-		render :text => "<li></li><li>" + options.join("</li><li>") + "</li>"
+		render plain:  ("<li></li><li>" + options.join("</li><li>") + "</li>").html_safe
 	end
 
 =begin
@@ -600,7 +600,7 @@ class EncountersController < GenericEncountersController
 
     set = set.sort rescue []
 
-    render :text => "<li></li>" + "<li>" + set.join("</li><li>") + "</li>"
+    render plain: ("<li></li>" + "<li>" + set.join("</li><li>") + "</li>").html_safe
 
   end
 
@@ -608,14 +608,14 @@ class EncountersController < GenericEncountersController
     search_string = (params[:search_string] || '').upcase
     triage_category_set = "TRIAGE CATEGORY"
 		triage_concept_set = ConceptName.find_by_name(triage_category_set).concept rescue ''
-		triage_concepts = Concept.find(:all, :joins => :concept_sets, :conditions => ['concept_set = ?', triage_concept_set.id])
+		triage_concepts = Concept.where(['concept_set = ?', triage_concept_set.id]).joins(:concept_sets)
 
     valid_answers = triage_concepts.map{|concept|
       name  =  concept.fullname rescue nil
       name.upcase.include?(search_string) ? name : nil rescue nil
     }.compact
 
-    render :text => "<li></li>" + "<li>" + valid_answers.join("</li><li>") + "</li>"
+    render plain:  ("<li></li>" + "<li>" + valid_answers.join("</li><li>") + "</li>").html_safe
 
   end
 
@@ -623,13 +623,13 @@ class EncountersController < GenericEncountersController
     search_string = (params[:search_string] || '').upcase
     priority_signs_set = "PRIORITY SIGNS PAEDS"
 		priority_signs_concept_set = ConceptName.find_by_name(priority_signs_set).concept rescue ''
-		priority_concepts = Concept.find(:all, :joins => :concept_sets, :conditions => ['concept_set = ?', priority_signs_concept_set.id])
+		priority_concepts = Concept.where(['concept_set = ?', priority_signs_concept_set.id]).joins(:concept_sets)
     priority_concepts << 'None'
     valid_answers = priority_concepts.map{|concept|
       name  =  concept.fullname rescue nil
       name.upcase.include?(search_string) ? name : nil rescue nil
     }.compact
-    render :text => "<li></li>" + "<li>" + valid_answers.join("</li><li>") + "</li>"
+    render plain:  ("<li></li>" + "<li>" + valid_answers.join("</li><li>") + "</li>").html_safe
 
   end
 
@@ -637,13 +637,13 @@ class EncountersController < GenericEncountersController
     search_string = (params[:search_string] || '').upcase
     emergency_signs_set = "EMERGENCY SIGNS PAEDS"
 		emergency_concept_set = ConceptName.find_by_name(emergency_signs_set).concept rescue ''
-		emergency_concepts = Concept.find(:all, :joins => :concept_sets, :conditions => ['concept_set = ?', emergency_concept_set.id])
+		emergency_concepts = Concept.where(['concept_set = ?', emergency_concept_set.id])
     #emergency_concepts << 'None'
 		valid_answers = emergency_concepts.map{|concept|
       name  =  concept.fullname rescue nil
       name.upcase.include?(search_string) ? name : nil rescue nil
     }.compact
-    render :text => "<li></li>" + "<li>" + valid_answers.sort.join("</li><li>") + "</li>"
+    render plain: ("<li></li>" + "<li>" + valid_answers.sort.join("</li><li>") + "</li>").html_safe
 
   end
 
@@ -712,14 +712,14 @@ class EncountersController < GenericEncountersController
   end
 
   def recorded_religions
-    religions = Observation.find(:all, :joins => [:concept, :encounter],
-      :conditions => ["obs.concept_id = ?
+    religions = Observation.where(
+      ["obs.concept_id = ?
       AND value_text LIKE '%#{params[:search_string]}%' AND encounter_type = ?",
         ConceptName.find_by_name("Other").concept_id,
-        EncounterType.find_by_name("SOCIAL HISTORY").id]).collect{|o| o.value_text}
+        EncounterType.find_by_name("SOCIAL HISTORY").id]).joins([:concept, :encounter]).collect{|o| o.value_text}
 
     result = "<li>" + religions.map{|n| n } .join("</li><li>") + "</li>"
-    render :text => result
+    render plain: result.html_safe
   end
 
   def created_nested_lab_orders
@@ -750,8 +750,8 @@ class EncountersController < GenericEncountersController
           }
 
           parent_obs = Observation.create(parent_obs)
-          obs_group = Observation.find(:first, :order => "obs_id DESC", :conditions => ["encounter_id =? AND concept_id =?", \
-                encounter_id, parent_obs.concept_id])
+          obs_group = Observation.where(["encounter_id =? AND concept_id =?",
+                encounter_id, parent_obs.concept_id]).order("obs_id DESC").first
           obs_group_id = obs_group.id if obs_group
           child_obs = {
             "encounter_id" => "#{encounter_id}",

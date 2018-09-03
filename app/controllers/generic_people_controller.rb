@@ -102,19 +102,19 @@ class GenericPeopleController < ApplicationController
 
 		person = PatientService.create_from_form(person_params)
 		if person
-			patient = Patient.new()
+			patient = Patient.new
 			patient.patient_id = person.id
 			patient.save
 			PatientService.patient_national_id_label(patient)
 		end
-		render :text => PatientService.remote_demographics(person).to_json
+		render plain:  PatientService.remote_demographics(person).to_json
 	end
 
 	def remote_demographics
 		# Search by the demographics that were passed in and then return demographics
 		people = PatientService.find_person_by_demographics(params)
 		result = people.empty? ? {} : PatientService.demographics(people.first)
-		render :text => result.to_json
+		render plain: result.to_json
 	end
   
 	def art_information
@@ -122,7 +122,7 @@ class GenericPeopleController < ApplicationController
     national_id = params["person"]["patient"] if national_id.blank? rescue nil
 		art_info = Patient.art_info_for_remote(national_id)
 		art_info = art_info_for_remote(national_id)
-		render :text => art_info.to_json
+		render plain: art_info.to_json
 	end
   
   def search
@@ -547,16 +547,15 @@ class GenericPeopleController < ApplicationController
       home_district = @parameters[:person][:addresses]['address2']
       home_village = @parameters[:person][:addresses]['neighborhood_cell']
 
-      people = Person.find(:all,:joins =>"INNER JOIN person_name pn
-       ON person.person_id = pn.person_id
-       INNER JOIN person_name_code pnc ON pnc.person_name_id = pn.person_name_id
-       INNER JOIN person_address pad ON pad.person_id = person.person_id",
-        :conditions =>["(pad.address2 LIKE (?) OR pad.county_district LIKE (?)
+      people = Person.where(["(pad.address2 LIKE (?) OR pad.county_district LIKE (?)
        OR pad.neighborhood_cell LIKE (?)) AND pnc.given_name_code LIKE (?)
        AND pnc.family_name_code LIKE (?) AND person.gender = '#{gender}'
        AND (person.birthdate >= ? AND person.birthdate <= ?)","%#{home_district}%",
-          "%#{ta}%","%#{home_village}%","%#{given_name_code}%","%#{family_name_code}%",
-          start_birthdate,end_birthdate],:group => "person.person_id")
+                             "%#{ta}%","%#{home_village}%","%#{given_name_code}%","%#{family_name_code}%",
+                             start_birthdate,end_birthdate]).joins("INNER JOIN person_name pn
+       ON person.person_id = pn.person_id
+       INNER JOIN person_name_code pnc ON pnc.person_name_id = pn.person_name_id
+       INNER JOIN person_address pad ON pad.person_id = person.person_id").group("person.person_id")
 
       if people
         people_ids = []
@@ -747,22 +746,22 @@ class GenericPeopleController < ApplicationController
     district_id = District.find_by_name("#{params[:filter_value]}").id
     traditional_authority_conditions = ["name LIKE (?) AND district_id = ?", "#{params[:search_string]}%", district_id]
 
-    traditional_authorities = TraditionalAuthority.find(:all,:conditions => traditional_authority_conditions, :order => 'name')
+    traditional_authorities = TraditionalAuthority.where(traditional_authority_conditions).order('name')
     traditional_authorities = traditional_authorities.map do |t_a|
       "<li value='#{t_a.name}'>#{t_a.name}</li>"
     end
-    render :text => traditional_authorities.join('') + "<li value='Other'>Other</li>" and return
+    render plain: (traditional_authorities.join('') + "<li value='Other'>Other</li>").html_safe and return
   end
 
   # Regions containing the string given in params[:value]
   def region
     region_conditions = ["name LIKE (?)", "#{params[:value]}%"]
 
-    regions = Region.find(:all,:conditions => region_conditions)
+    regions = Region.where(region_conditions)
     regions = regions.map do |r|
       "<li value='#{r.name}'>#{r.name}</li>"
     end
-    render :text => regions.join('') and return
+    render plain: regions.join('').html_safe and return
   end
 
   # Districts containing the string given in params[:value]
@@ -770,19 +769,19 @@ class GenericPeopleController < ApplicationController
     region_id = Region.find_by_name("#{params[:filter_value]}").id
     region_conditions = ["name LIKE (?) AND region_id = ? ", "#{params[:search_string]}%", region_id]
 
-    districts = District.find(:all,:conditions => region_conditions, :order => 'name')
+    districts = District.where(region_conditions).order('name')
     districts = districts.map do |d|
       "<li value='#{d.name}'>#{d.name}</li>"
     end
-    render :text => districts.join('') + "<li value='Other'>Other</li>" and return
+    render plain: (districts.join('') + "<li value='Other'>Other</li>").html_safe and return
   end
 
   def tb_initialization_district
-    districts = District.find(:all, :order => 'name')
+    districts = District.all.order('name')
     districts = districts.map do |d|
       "<li value='#{d.name}'>#{d.name}</li>"
     end
-    render :text => districts.join('') + "<li value='Other'>Other</li>" and return
+    render plain: (districts.join('') + "<li value='Other'>Other</li>").html_safe and return
   end
 
   # Villages containing the string given in params[:value]
@@ -790,20 +789,21 @@ class GenericPeopleController < ApplicationController
     traditional_authority_id = TraditionalAuthority.find_by_name("#{params[:filter_value]}").id
     village_conditions = ["name LIKE (?) AND traditional_authority_id = ?", "#{params[:search_string]}%", traditional_authority_id]
 
-    villages = Village.find(:all,:conditions => village_conditions, :order => 'name')
+    villages = Village.where(village_conditions).order('name')
     villages = villages.map do |v|
       "<li value='#{v.name}'>#{v.name}</li>"
     end
-    render :text => villages.join('') + "<li value='Other'>Other</li>" and return
+    render plain: (villages.join('') + "<li value='Other'>Other</li>").html_safe and return
   end
   
   # Landmark containing the string given in params[:value]
   def landmark
-    landmarks = PersonAddress.find(:all, :select => "DISTINCT address1" , :conditions => ["city_village = (?) AND address1 LIKE (?)", "#{params[:filter_value]}", "#{params[:search_string]}%"])
+    landmarks = PersonAddress.select("DISTINCT address1").where(["city_village = (?) AND address1 LIKE (?)",
+                                                                 "#{params[:filter_value]}", "#{params[:search_string]}%"])
     landmarks = landmarks.map do |v|
       "<li value='#{v.address1}'>#{v.address1}</li>"
     end
-    render :text => landmarks.join('') + "<li value='Other'>Other</li>" and return
+    render plain: (landmarks.join('') + "<li value='Other'>Other</li>").html_safe and return
   end
 
 =begin
@@ -833,14 +833,12 @@ class GenericPeopleController < ApplicationController
 
     if PatientService.art_patient?(patient)
       clinic_encounters = ["APPOINTMENT","HIV CLINIC CONSULTATION","VITALS","HIV STAGING",'ART ADHERENCE','DISPENSING','HIV CLINIC REGISTRATION']
-      clinic_encounter_ids = EncounterType.find(:all,:conditions => ["name IN (?)",clinic_encounters]).collect{| e | e.id }
-      first_encounter_date = patient.encounters.find(:first,
-        :order => 'encounter_datetime',
-        :conditions => ['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
+      clinic_encounter_ids = EncounterType.where(["name IN (?)",clinic_encounters]).collect{| e | e.id }
+      first_encounter_date = patient.encounters.where(['encounter_type IN (?)',clinic_encounter_ids]).order('encounter_datetime'
+                             ).first.encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
 
-      last_encounter_date = patient.encounters.find(:first,
-        :order => 'encounter_datetime DESC',
-        :conditions => ['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
+      last_encounter_date = patient.encounters.where(['encounter_type IN (?)',clinic_encounter_ids]
+      ).order('encounter_datetime DESC').encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
 
 
       art_start_date = PatientService.patient_art_start_date(patient.id).strftime("%d-%b-%Y") rescue 'Uknown'
@@ -848,7 +846,7 @@ class GenericPeopleController < ApplicationController
       last_given_drugs = last_given_drugs.value_text rescue 'Uknown'
 
       program_id = Program.find_by_name('HIV PROGRAM').id
-      outcome = PatientProgram.find(:first,:conditions =>["program_id = ? AND patient_id = ?",program_id,patient.id],:order => "date_enrolled DESC")
+      outcome = PatientProgram.where(["program_id = ? AND patient_id = ?",program_id,patient.id]).order("date_enrolled DESC").first
       art_clinic_outcome = outcome.patient_states.last.program_workflow_state.concept.fullname rescue 'Unknown'
 
       date_tested_positive = patient.person.observations.recent(1).question("FIRST POSITIVE HIV TEST DATE").last rescue nil
@@ -887,13 +885,10 @@ class GenericPeopleController < ApplicationController
     if PatientService.art_patient?(patient)
       clinic_encounters = ["APPOINTMENT","HIV CLINIC CONSULTATION","VITALS","HIV STAGING",'ART ADHERENCE','DISPENSING','HIV CLINIC REGISTRATION']
       clinic_encounter_ids = EncounterType.find(:all,:conditions => ["name IN (?)",clinic_encounters]).collect{| e | e.id }
-      first_encounter_date = patient.encounters.find(:first, 
-        :order => 'encounter_datetime',
-        :conditions => ['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
+      first_encounter_date = patient.encounters.where(['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
 
-      last_encounter_date = patient.encounters.find(:first, 
-        :order => 'encounter_datetime DESC',
-        :conditions => ['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
+      last_encounter_date = patient.encounters.where(['encounter_type IN (?)',clinic_encounter_ids]
+             ).order('encounter_datetime DESC').first.encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
       
 
       art_start_date = patient.art_start_date.strftime("%d-%b-%Y") rescue 'Uknown'
@@ -901,7 +896,7 @@ class GenericPeopleController < ApplicationController
       last_given_drugs = last_given_drugs.value_text rescue 'Uknown'
 
       program_id = Program.find_by_name('HIV PROGRAM').id
-      outcome = PatientProgram.find(:first,:conditions =>["program_id = ? AND patient_id = ?",program_id,patient.id],:order => "date_enrolled DESC")
+      outcome = PatientProgram.where(["program_id = ? AND patient_id = ?",program_id,patient.id]).order("date_enrolled DESC").first
       art_clinic_outcome = outcome.patient_states.last.program_workflow_state.concept.fullname rescue 'Unknown'
 
       date_tested_positive = patient.person.observations.recent(1).question("FIRST POSITIVE HIV TEST DATE").last rescue nil
@@ -978,7 +973,7 @@ class GenericPeopleController < ApplicationController
     
     result = RestClient.get(url)
     
-    render :text => result, :layout => false
+    render plain: result, :layout => false
   end
 
   def demographics
@@ -1044,9 +1039,8 @@ class GenericPeopleController < ApplicationController
     else
       PatientIdentifierType.find_by_name('National ID').next_identifier({:patient => patient})
     end
-    npid = PatientIdentifier.find(:first,
-      :conditions => ["patient_id = ? AND identifier = ?
-           AND voided = 0", patient.id,params[:identifier]])
+    npid = PatientIdentifier.where(["patient_id = ? AND identifier = ?
+           AND voided = 0", patient.id,params[:identifier]]).first
     npid.voided = 1
     npid.void_reason = "Given another national ID"
     npid.date_voided = Time.now()

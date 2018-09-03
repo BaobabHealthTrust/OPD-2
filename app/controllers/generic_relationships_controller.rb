@@ -1,5 +1,5 @@
 class GenericRelationshipsController < ApplicationController
-  before_filter :find_patient, :except => [:void]
+  before_action :find_patient, :except => [:void]
   
   def new
     #raise'new'

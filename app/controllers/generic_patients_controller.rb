@@ -1,7 +1,7 @@
 #require 'underlined_diseases_alerts'
 
 class GenericPatientsController < ApplicationController
-	before_filter :find_patient, :except => [:void]
+	before_action :find_patient, :except => [:void]
 
 	def show
 		return_uri = session[:return_uri]
@@ -20,7 +20,7 @@ class GenericPatientsController < ApplicationController
 		@prescriptions = @patient.orders.unfinished.prescriptions.all
 		@programs = @patient.patient_programs.all
 		@alerts = alerts(@patient, session_date) rescue nil
-		@restricted = ProgramLocationRestriction.all(:conditions => {:location_id => Location.current_health_center.id })
+		@restricted = ProgramLocationRestriction.where(location_id: Location.current_health_center.id)
 		@restricted.each do |restriction|
 			@encounters = restriction.filter_encounters(@encounters)
 			@prescriptions = restriction.filter_orders(@prescriptions)
@@ -53,13 +53,12 @@ class GenericPatientsController < ApplicationController
 
   def opdshow
     session_date = session[:datetime].to_date rescue Date.today
-    encounter_types = EncounterType.find(:all,:conditions =>["name IN (?)",
+    encounter_types = EncounterType.where(["name IN (?)",
         ['REGISTRATION','OUTPATIENT DIAGNOSIS','REFER PATIENT OUT?','OUTPATIENT RECEPTION','DISPENSING']]).map{|e|e.id}
-    @encounters = Encounter.find(:all,:select => "encounter_id , name encounter_type_name, count(*) c",
-      :joins => "INNER JOIN encounter_type ON encounter_type_id = encounter_type",
-      :conditions =>["patient_id = ? AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",
-        params[:id],encounter_types,session_date],
-      :group => 'encounter_type').collect do |rec|
+    @encounters = Encounter.select("encounter_id , name encounter_type_name, count(*) c").where(
+         ["patient_id = ? AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",
+          params[:id],encounter_types,session_date]
+         ).joins("INNER JOIN encounter_type ON encounter_type_id = encounter_type").group('encounter_type').collect do |rec|
       if current_user.user_roles.map{|r|r.role}.join(',').match(/Registration|Clerk/i)
         next unless rec.observations[0].to_s.match(/Workstation location:   Outpatient/i)
       end
@@ -90,10 +89,8 @@ class GenericPatientsController < ApplicationController
     type = EncounterType.find_by_name('TREATMENT')
     session_date = session[:datetime].to_date rescue Date.today
     @session_date = session_date
-    @prescriptions = Order.find(:all,
-      :joins => "INNER JOIN encounter e USING (encounter_id)",
-      :conditions => ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
-        type.id,@patient.id,session_date])
+    @prescriptions = Order.where(["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
+                                  type.id,@patient.id,session_date]).joins("INNER JOIN encounter e USING (encounter_id)")
 
     if !allowed_hiv_viewer
       @prescriptions = remove_art_encounters(@prescriptions, 'prescription')
@@ -128,9 +125,9 @@ class GenericPatientsController < ApplicationController
     @patient = Patient.find(params[:patient_id])
     type = EncounterType.find_by_name('TREATMENT')
     session_date = session[:datetime].to_date rescue Date.today
-    @prescriptions = Order.find(:all,
-      :joins => "INNER JOIN encounter e USING (encounter_id)",
-      :conditions => ["encounter_type = ? AND e.patient_id = ?",type.id,@patient.id])
+    @prescriptions = Order.where(["encounter_type = ? AND e.patient_id = ?",type.id,@patient.id]).joins(
+        "INNER JOIN encounter e USING (encounter_id)")
+
 
     @historical = @patient.orders.historical.prescriptions.all
 
@@ -458,13 +455,13 @@ class GenericPatientsController < ApplicationController
 
   def next_available_arv_number
     next_available_arv_number = PatientIdentifier.next_available_arv_number
-    render :text => next_available_arv_number.gsub(PatientIdentifier.site_prefix,'').strip rescue nil
+    render plain: next_available_arv_number.gsub(PatientIdentifier.site_prefix,'').strip rescue nil
   end
 
   def assigned_arv_number
     assigned_arv_number = PatientIdentifier.find(:all,:conditions => ["voided = 0 AND identifier_type = ?",
         PatientIdentifierType.find_by_name("ARV Number").id]).collect{|i| i.identifier.gsub("#{PatientIdentifier.site_prefix}-ARV-",'').strip.to_i} rescue nil
-    render :text => assigned_arv_number.sort.to_json rescue nil
+    render plain: assigned_arv_number.sort.to_json rescue nil
   end
 
   def mastercard_modify
@@ -738,12 +735,10 @@ class GenericPatientsController < ApplicationController
 
     if @show_history
       last_visit_date = patient.encounters.last.encounter_datetime.to_date rescue Date.today
-      latest_encounters = Encounter.find(:all,
-        :order => "encounter_datetime ASC,date_created ASC",
-        :conditions => ["patient_id = ? AND
+      latest_encounters = Encounter.where(["patient_id = ? AND
         encounter_datetime >= ? AND encounter_datetime <= ?",patient.patient_id,
-          last_visit_date.strftime('%Y-%m-%d 00:00:00'),
-          last_visit_date.strftime('%Y-%m-%d 23:59:59')])
+                                           last_visit_date.strftime('%Y-%m-%d 00:00:00'),
+                                           last_visit_date.strftime('%Y-%m-%d 23:59:59')]).order("encounter_datetime ASC,date_created ASC")
 
       (latest_encounters || []).each do |encounter|
         next if encounter.name.match(/TREATMENT/i)
@@ -770,10 +765,8 @@ class GenericPatientsController < ApplicationController
 
     type = EncounterType.find_by_name('TREATMENT')
     session_date = session[:datetime].to_date rescue Date.today
-    Order.find(:all,
-      :joins => "INNER JOIN encounter e USING (encounter_id)",
-      :conditions => ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
-        type.id,@patient.id,session_date]).each{|order|
+    Order.where(["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
+                 type.id,@patient.id,session_date]).joins("INNER JOIN encounter e USING (encounter_id)").each{|order|
 
       @amount_needed = @amount_needed + (order.drug_order.amount_needed.to_i rescue 0)
 
@@ -795,10 +788,8 @@ class GenericPatientsController < ApplicationController
 
     type = EncounterType.find_by_name('TREATMENT')
     session_date = session[:datetime].to_date rescue Date.today
-    Order.find(:all,
-      :joins => "INNER JOIN encounter e USING (encounter_id)",
-      :conditions => ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
-        type.id,@patient.id,session_date]).each{|order|
+    Order.where( ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
+                  type.id,@patient.id,session_date]).joins("INNER JOIN encounter e USING (encounter_id)").each{|order|
 
       @amount_needed = @amount_needed + (order.drug_order.amount_needed.to_i rescue 0)
 
@@ -814,10 +805,9 @@ class GenericPatientsController < ApplicationController
   def precription_data
     type = EncounterType.find_by_name('TREATMENT')
     session_date = session[:datetime].to_date rescue Date.today
-    @prescriptions = Order.find(:all,
-      :joins => "INNER JOIN encounter e USING (encounter_id)",
-      :conditions => ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
-        type.id,@patient.id,session_date])
+    @prescriptions = Order.where("INNER JOIN encounter e USING (encounter_id)").joins(
+        ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
+         type.id,@patient.id,session_date])
 
     @encounters = @patient.encounters.find_by_date(session_date)
 
@@ -896,13 +886,12 @@ class GenericPatientsController < ApplicationController
     date = params[:date].to_date
     encounter_type = EncounterType.find_by_name('APPOINTMENT')
     concept_id = ConceptName.find_by_name('APPOINTMENT DATE').concept_id
-    count = Observation.count(:all,
-      :joins => "INNER JOIN encounter e USING(encounter_id)",:group => "value_datetime",
-      :conditions =>["concept_id = ? AND encounter_type = ? AND value_datetime >= ? AND value_datetime <= ?",
-        concept_id,encounter_type.id,date.strftime('%Y-%m-%d 00:00:00'),date.strftime('%Y-%m-%d 23:59:59')])
+    count = Observation.where(["concept_id = ? AND encounter_type = ? AND value_datetime >= ? AND value_datetime <= ?",
+                               concept_id,encounter_type.id,date.strftime('%Y-%m-%d 00:00:00'),date.strftime('%Y-%m-%d 23:59:59')]
+                              ).joins("INNER JOIN encounter e USING(encounter_id)").group("value_datetime").count
     count = count.values unless count.blank?
     count = '0' if count.blank?
-    render :text => count
+    render plain: count
   end
 
   def recent_lab_orders_print
@@ -1078,8 +1067,8 @@ class GenericPatientsController < ApplicationController
     does_tb_status_obs_exist = false
 
     session_date = session[:datetime].to_date rescue Date.today
-    encounter = Encounter.find(:all, :conditions=>["patient_id = ? \
-                    AND encounter_type = ? AND DATE(encounter_datetime) = ? ", patient.id, \
+    encounter = Encounter.where(["patient_id = ?
+                    AND encounter_type = ? AND DATE(encounter_datetime) = ? ", patient.id,
           EncounterType.find_by_name("TB CLINIC VISIT").id, session_date]).last rescue nil
     @date = encounter.encounter_datetime.to_date rescue nil
 
@@ -1100,10 +1089,9 @@ class GenericPatientsController < ApplicationController
   end
 
   def patient_need_sputum_test?(patient_id)
-    encounter_date = Encounter.find(:last,
-      :conditions => ["encounter_type = ? and patient_id = ?",
+    encounter_date = Encounter.where(["encounter_type = ? and patient_id = ?",
         EncounterType.find_by_name("TB Registration").id,
-        patient_id]).encounter_datetime rescue ''
+        patient_id]).last.encounter_datetime rescue ''
     smear_positive_patient = false
     has_no_results = false
 
@@ -1119,12 +1107,11 @@ class GenericPatientsController < ApplicationController
         date_diff = (Date.today - encounter_date.to_date).to_i
 
         if date_diff > 60 and date_diff < 110
-          results = Encounter.find(:last,
-            :conditions => ["encounter_type = ? and " \
+          results = Encounter.where(
+            ["encounter_type = ? and " \
                 "patient_id = ? AND encounter_datetime BETWEEN ? AND ?",
               EncounterType.find_by_name("LAB RESULTS").id,
-              patient_id, (encounter_date + 60).to_s, (encounter_date + 110).to_s],
-            :include => observations) rescue ''
+              patient_id, (encounter_date + 60).to_s, (encounter_date + 110).to_s]).includes(:observations).last rescue ''
 
           if results.blank?
             has_no_results = true
@@ -1133,12 +1120,10 @@ class GenericPatientsController < ApplicationController
           end
 
         elsif date_diff > 110 and date_diff < 140
-          results = Encounter.find(:last,
-            :conditions => ["encounter_type = ? and " \
-                "patient_id = ? AND encounter_datetime BETWEEN ? AND ?",
+          results = Encounter.where(
+            ["encounter_type = ? AND patient_id = ? AND encounter_datetime BETWEEN ? AND ?",
               EncounterType.find_by_name("LAB RESULTS").id,
-              patient_id, (encounter_date + 111).to_s, (encounter_date + 140).to_s],
-            :include => observations) rescue ''
+              patient_id, (encounter_date + 111).to_s, (encounter_date + 140).to_s]).includes(:observations) rescue ''
 
           if results.blank?
             has_no_results = true
@@ -1474,8 +1459,8 @@ class GenericPatientsController < ApplicationController
     patient = Patient.find(patient_id)
     patient_bean = PatientService.get_patient(patient.person)
 
-    lab_orders = Encounter.find(:last,:conditions =>["encounter_type = ? and patient_id = ?",
-        EncounterType.find_by_name("LAB ORDERS").id,patient.id]).observations
+    lab_orders = Encounter.where(["encounter_type = ? and patient_id = ?",
+        EncounterType.find_by_name("LAB ORDERS").id,patient.id]).last.observations
     labels = []
     i = 0
 
@@ -1685,8 +1670,8 @@ class GenericPatientsController < ApplicationController
         (!visits.tb_within_last_two_yrs.nil? ? (visits.tb_within_last_two_yrs.upcase == "YES" ?
             "Last 2yrs" : "Never/ >2yrs") : "Never/ >2yrs"))
 
-    hiv_clinic_registration = Encounter.find(:last,:conditions =>["encounter_type = ? and patient_id = ?",
-        EncounterType.find_by_name("HIV CLINIC REGISTRATION").id,patient_obj.id])
+    hiv_clinic_registration = Encounter.where(["encounter_type = ? and patient_id = ?",
+        EncounterType.find_by_name("HIV CLINIC REGISTRATION").id,patient_obj.id]).last
 
     (hiv_clinic_registration.observations).map do | obs |
       concept_name = obs.to_s.split(':')[0].strip rescue nil
@@ -1716,10 +1701,9 @@ class GenericPatientsController < ApplicationController
     patient_visits = {}
     yes = ConceptName.find_by_name("YES")
     if encounter_date.blank?
-      observations = Observation.find(:all,:conditions =>["voided = 0 AND person_id = ?",patient_obj.patient_id],:order =>"obs_datetime").map{|obs| obs if !obs.concept.nil?}
+      observations = Observation.where(["voided = 0 AND person_id = ?",patient_obj.patient_id],:order =>"obs_datetime").map{|obs| obs if !obs.concept.nil?}
     else
-      observations = Observation.find(:all,
-        :conditions =>["voided = 0 AND person_id = ? AND Date(obs_datetime) = ?",
+      observations = Observation.where(["voided = 0 AND person_id = ? AND Date(obs_datetime) = ?",
           patient_obj.patient_id,encounter_date.to_date],:order =>"obs_datetime").map{|obs| obs if !obs.concept.nil?}
     end
 
@@ -1824,15 +1808,13 @@ class GenericPatientsController < ApplicationController
     #patients currents/available states (patients outcome/s)
     program_id = Program.find_by_name('HIV PROGRAM').id
     if encounter_date.blank?
-      patient_states = PatientState.find(:all,
-        :joins => "INNER JOIN patient_program p ON p.patient_program_id = patient_state.patient_program_id",
-        :conditions =>["patient_state.voided = 0 AND p.voided = 0 AND p.program_id = ? AND p.patient_id = ?",
-          program_id,patient_obj.patient_id],:order => "patient_state_id ASC")
+      patient_states = PatientState.where(["patient_state.voided = 0 AND p.voided = 0 AND p.program_id = ? AND p.patient_id = ?",
+                                           program_id,patient_obj.patient_id]).joins(
+             "INNER JOIN patient_program p ON p.patient_program_id = patient_state.patient_program_id").order("patient_state_id ASC")
     else
-      patient_states = PatientState.find(:all,
-        :joins => "INNER JOIN patient_program p ON p.patient_program_id = patient_state.patient_program_id",
-        :conditions =>["patient_state.voided = 0 AND p.voided = 0 AND p.program_id = ? AND start_date = ? AND p.patient_id =?",
-          program_id,encounter_date.to_date,patient_obj.patient_id],:order => "patient_state_id ASC")
+      patient_states = PatientState.where(["patient_state.voided = 0 AND p.voided = 0 AND p.program_id = ? AND start_date = ? AND p.patient_id =?",
+                                           program_id,encounter_date.to_date,patient_obj.patient_id]).joins(
+              "INNER JOIN patient_program p ON p.patient_program_id = patient_state.patient_program_id").order("patient_state_id ASC")
     end
 
 =begin
@@ -1854,10 +1836,10 @@ class GenericPatientsController < ApplicationController
     unless encounter_date.blank?
       outcome = patient_visits[encounter_date].outcome rescue nil
       if outcome.blank?
-        state = PatientState.find(:first,
-          :joins => "INNER JOIN patient_program p ON p.patient_program_id = patient_state.patient_program_id",
-          :conditions =>["patient_state.voided = 0 AND p.voided = 0 AND p.program_id = ? AND p.patient_id = ?",
-            program_id,patient_obj.patient_id],:order => "date_enrolled DESC,start_date DESC")
+        state = PatientState.where(["patient_state.voided = 0 AND p.voided = 0 AND p.program_id = ? AND p.patient_id = ?",
+                                    program_id,patient_obj.patient_id]).joins(
+              "INNER JOIN patient_program p ON p.patient_program_id = patient_state.patient_program_id").order(
+            "date_enrolled DESC,start_date DESC").first
 
         patient_visits[encounter_date] = Mastercard.new() if patient_visits[encounter_date].blank?
         patient_visits[encounter_date].outcome = state.program_workflow_state.concept.fullname rescue 'Unknown state'
@@ -2000,17 +1982,17 @@ class GenericPatientsController < ApplicationController
     provider_username = "#{'Seen by: ' + User.find(provider[0].last).username}" unless provider.blank?
     if provider_username.blank?
       clinic_encounters = ["HIV CLINIC CONSULTATION","HIV STAGING","ART ADHERENCE","TREATMENT",'DISPENSION','HIV RECEPTION']
-      encounter_type_ids = EncounterType.find(:all,:conditions =>["name IN (?)",clinic_encounters]).collect{| e | e.id }
-      encounter = Encounter.find(:first,:conditions =>["patient_id = ? AND encounter_type In (?)",
-          patient.id,encounter_type_ids],:order => "encounter_datetime DESC")
+      encounter_type_ids = EncounterType.where(["name IN (?)",clinic_encounters]).collect{| e | e.id }
+      encounter = Encounter.where(["patient_id = ? AND encounter_type In (?)",
+          patient.id,encounter_type_ids]).order("encounter_datetime DESC").first
       provider_username = "#{'Recorded by: ' + User.find(encounter.creator).username}" rescue nil
     end
     provider_username
   end
 
   def art_guardian(patient)
-    person_id = Relationship.find(:first,:order => "date_created DESC",
-      :conditions =>["person_a = ?",patient.person.id]).person_b rescue nil
+    person_id = Relationship.where(
+      ["person_a = ?",patient.person.id]).order("date_created DESC").first.person_b rescue nil
     patient_bean = PatientService.get_patient(Person.find(person_id))
     patient_bean.name rescue nil
   end
@@ -2125,10 +2107,10 @@ class GenericPatientsController < ApplicationController
       if (next_filing_number[5..-1].to_i >= global_property_value.to_i)
         encounter_type_name = ['REGISTRATION','VITALS','HIV CLINIC REGISTRATION','HIV CLINIC CONSULTATION',
           'TREATMENT','HIV RECEPTION','HIV STAGING','DISPENSING','APPOINTMENT']
-        encounter_type_ids = EncounterType.find(:all,:conditions => ["name IN (?)",encounter_type_name]).map{|n|n.id}
+        encounter_type_ids = EncounterType.where(["name IN (?)",encounter_type_name]).map{|n|n.id}
 
-        all_filing_numbers = PatientIdentifier.find(:all, :conditions =>["identifier_type = ?",
-            filing_number_identifier_type.id],:group=>"patient_id")
+        all_filing_numbers = PatientIdentifier.where(["identifier_type = ?",
+            filing_number_identifier_type.id]).group("patient_id")
         patient_ids = all_filing_numbers.collect{|i|i.patient_id}
         patient_to_be_archived = Encounter.find_by_sql(["
           SELECT patient_id, MAX(encounter_datetime) AS last_encounter_id
@@ -2140,9 +2122,9 @@ class GenericPatientsController < ApplicationController
           LIMIT 1",patient_ids, encounter_type_ids]).first.patient rescue nil
 
         if patient_to_be_archived.blank?
-          patient_to_be_archived = PatientIdentifier.find(:last,:conditions =>["identifier_type = ?",
-              filing_number_identifier_type.id],
-            :group=>"patient_id",:order => "identifier DESC").patient rescue nil
+          patient_to_be_archived = PatientIdentifier.where(["identifier_type = ?",
+                                                            filing_number_identifier_type.id]
+                                        ).group("patient_id").order("identifier DESC").last.patient rescue nil
         end
       end
 
@@ -2215,16 +2197,15 @@ class GenericPatientsController < ApplicationController
     @patient      = Patient.find(params[:patient_id] || session[:patient_id]) rescue nil
     void_encounter if (params[:void] && params[:void] == 'true')
     #@encounters   = @patient.encounters.current.active.find(:all)
-    @encounters   = @patient.encounters.find(:all, :conditions => ['DATE(encounter_datetime) = ?',session_date.to_date])
+    @encounters   = @patient.encounters.where(['DATE(encounter_datetime) = ?',session_date.to_date])
     excluded_encounters = ["Registration", "Diabetes history","Complications", #"Diabetes test",
       "General health", "Diabetes treatments", "Diabetes admissions","Hospital admissions",
       "Hypertension management", "Past diabetes medical history"]
     @encounter_names = @patient.encounters.active.map{|encounter| encounter.name}.uniq.delete_if{ |encounter| excluded_encounters.include? encounter.humanize } rescue []
     ignored_concept_id = Concept.find_by_name("NO").id;
 
-    @observations = Observation.find(:all, :order => 'obs_datetime DESC',
-      :limit => 50, :conditions => ["person_id= ? AND obs_datetime < ? AND value_coded != ?",
-        @patient.patient_id, Time.now.to_date, ignored_concept_id])
+    @observations = Observation.where(["person_id= ? AND obs_datetime < ? AND value_coded != ?",
+                                       @patient.patient_id, Time.now.to_date, ignored_concept_id]).order('obs_datetime DESC').limit(50)
 
     @observations.delete_if { |obs| obs.value_text.downcase == "no" rescue nil }
 
@@ -2235,9 +2216,8 @@ class GenericPatientsController < ApplicationController
 
     @obs_datetimes = @observations.map { |each|each.obs_datetime.strftime("%d-%b-%Y")}.uniq
 
-    @vitals = Encounter.find(:all, :order => 'encounter_datetime DESC',
-      :limit => 50, :conditions => ["patient_id= ? AND encounter_datetime < ? ",
-        @patient.patient_id, Time.now.to_date])
+    @vitals = Encounter.where(["patient_id= ? AND encounter_datetime < ? ",
+                               @patient.patient_id, Time.now.to_date]).order('encounter_datetime DESC').limit(50)
 
     @patient_treatements = DiabetesService.treatments(@patient)
 
@@ -2313,9 +2293,8 @@ class GenericPatientsController < ApplicationController
     @encounter_names = @patient.encounters.active.map{|encounter| encounter.name}.uniq.delete_if{ |encounter| excluded_encounters.include? encounter.humanize } rescue []
     ignored_concept_id = Concept.find_by_name("NO").id;
 
-    @observations = Observation.find(:all, :order => 'obs_datetime DESC',
-      :limit => 50, :conditions => ["person_id= ? AND obs_datetime < ? AND value_coded != ?",
-        @patient.patient_id, Time.now.to_date, ignored_concept_id])
+    @observations = Observation.where(["person_id= ? AND obs_datetime < ? AND value_coded != ?",
+                                       @patient.patient_id, Time.now.to_date, ignored_concept_id]).order('obs_datetime DESC').limit(50)
 
     @observations.delete_if { |obs| obs.value_text.downcase == "no" rescue nil }
 
@@ -2326,9 +2305,8 @@ class GenericPatientsController < ApplicationController
 
     @obs_datetimes = @observations.map { |each|each.obs_datetime.strftime("%d-%b-%Y")}.uniq
 
-    @vitals = Encounter.find(:all, :order => 'encounter_datetime DESC',
-      :limit => 50, :conditions => ["patient_id= ? AND encounter_datetime < ? ",
-        @patient.patient_id, Time.now.to_date])
+    @vitals = Encounter.where(["patient_id= ? AND encounter_datetime < ? ",
+                               @patient.patient_id, Time.now.to_date]).order('encounter_datetime DESC').limit(50)
 
     @patient_treatements = DiabetesService.treatments(@patient)
 
@@ -2374,9 +2352,8 @@ class GenericPatientsController < ApplicationController
 
     @encounter_type_ids = EncounterType.find_all_by_name(encounters_list).each{|e| e.encounter_type_id}
 
-    @encounters   = @patient.encounters.find(:all, :order => 'encounter_datetime DESC',
-      :conditions => ["patient_id= ? AND encounter_type in (?)",
-        @patient.patient_id,@encounter_type_ids])
+    @encounters   = @patient.encounters.where(["patient_id= ? AND encounter_type in (?)",
+                                               @patient.patient_id,@encounter_type_ids]).order('encounter_datetime DESC')
 
     @encounter_names = @patient.encounters.map{|encounter| encounter.name}.uniq
 
@@ -2417,9 +2394,8 @@ class GenericPatientsController < ApplicationController
     @encounter_names = @patient.encounters.active.map{|encounter| encounter.name}.uniq.delete_if{ |encounter| excluded_encounters.include? encounter.humanize } rescue []
     ignored_concept_id = Concept.find_by_name("NO").id;
 
-    @observations = Observation.find(:all, :order => 'obs_datetime DESC',
-      :limit => 50, :conditions => ["person_id= ? AND obs_datetime < ? AND value_coded != ?",
-        @patient.patient_id, Time.now.to_date, ignored_concept_id])
+    @observations = Observation.where(["person_id= ? AND obs_datetime < ? AND value_coded != ?",
+                                       @patient.patient_id, Time.now.to_date, ignored_concept_id]).order('obs_datetime DESC').limit(50)
 
     @observations.delete_if { |obs| obs.value_text.downcase == "no" rescue nil }
 
@@ -2430,9 +2406,8 @@ class GenericPatientsController < ApplicationController
 
     @obs_datetimes = @observations.map { |each|each.obs_datetime.strftime("%d-%b-%Y")}.uniq
 
-    @vitals = Encounter.find(:all, :order => 'encounter_datetime DESC',
-      :limit => 50, :conditions => ["patient_id= ? AND encounter_datetime < ? ",
-        @patient.patient_id, Time.now.to_date])
+    @vitals = Encounter.where(["patient_id= ? AND encounter_datetime < ? ",
+                               @patient.patient_id, Time.now.to_date]).order('encounter_datetime DESC').limit(50)
 
     @patient_treatements = DiabetesService.treatments(@patient)
 
@@ -2475,9 +2450,8 @@ class GenericPatientsController < ApplicationController
     @encounter_names = @patient.encounters.active.map{|encounter| encounter.name}.uniq.delete_if{ |encounter| excluded_encounters.include? encounter.humanize } rescue []
     ignored_concept_id = Concept.find_by_name("NO").id;
 
-    @observations = Observation.find(:all, :order => 'obs_datetime DESC',
-      :limit => 50, :conditions => ["person_id= ? AND obs_datetime < ? AND value_coded != ?",
-        @patient.patient_id, Time.now.to_date, ignored_concept_id])
+    @observations = Observation.where(["person_id= ? AND obs_datetime < ? AND value_coded != ?",
+                                       @patient.patient_id, Time.now.to_date, ignored_concept_id]).order('obs_datetime DESC').limit(50)
 
     @observations.delete_if { |obs| obs.value_text.downcase == "no" rescue nil }
 
@@ -2488,9 +2462,8 @@ class GenericPatientsController < ApplicationController
 
     @obs_datetimes = @observations.map { |each|each.obs_datetime.strftime("%d-%b-%Y")}.uniq
 
-    @vitals = Encounter.find(:all, :order => 'encounter_datetime DESC',
-      :limit => 50, :conditions => ["patient_id= ? AND encounter_datetime < ? ",
-        @patient.patient_id, Time.now.to_date])
+    @vitals = Encounter.where(["patient_id= ? AND encounter_datetime < ? ",
+                               @patient.patient_id, Time.now.to_date]).order('encounter_datetime DESC').limit(50)
 
     @patient_treatements = DiabetesService.treatments(@patient)
 
@@ -2608,7 +2581,7 @@ class GenericPatientsController < ApplicationController
         end
       end
     end
-    render :text => ""
+    render plain:  ""
   end
 
   def complications
@@ -2625,27 +2598,19 @@ class GenericPatientsController < ApplicationController
     #TODO: move this code to Patient model
     # Creatinine
     creatinine_id = Concept.find_by_name('CREATININE').id
-    @creatinine_obs = @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['encounter_type = ? AND concept_id = ?',
-        diabetes_test_id, creatinine_id],
-      :order => 'obs_datetime DESC')
+    @creatinine_obs = @patient.person.observations.where(['encounter_type = ? AND concept_id = ?',
+                                                          diabetes_test_id, creatinine_id]).joins(:encounter).order('obs_datetime DESC')
 
     # Urine Protein
     urine_protein_id = Concept.find_by_name('URINE PROTEIN').id
-    @urine_protein_obs = @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['encounter_type = ? AND concept_id = ?',
-        diabetes_test_id, urine_protein_id],
-      :order => 'obs_datetime DESC')
+    @urine_protein_obs = @patient.person.observations.where(['encounter_type = ? AND concept_id = ?',
+                                                             diabetes_test_id, urine_protein_id],).joins(:encounter).order('obs_datetime DESC')
 
     # Foot Check
-    @foot_check_encounters = @patient.encounters.find(:all,
-      :joins => :observations,
-      :conditions => ['concept_id IN (?)',
-        ConceptName.find_all_by_name(['RIGHT FOOT/LEG',
-            'LEFT FOOT/LEG', 'LEFT HAND/ARM', 'RIGHT HAND/ARM']).map(&:concept_id)],
-      :order => 'obs_datetime DESC').uniq
+    @foot_check_encounters = @patient.encounters.where(['concept_id IN (?)',
+                                                        ConceptName.find_all_by_name(['RIGHT FOOT/LEG',
+                                                                                      'LEFT FOOT/LEG', 'LEFT HAND/ARM', 'RIGHT HAND/ARM']
+                                                        ).map(&:concept_id)]).joins(:observations).order('obs_datetime DESC').uniq
 
     if @foot_check_encounters.nil?
       @foot_check_encounters = []
@@ -2654,11 +2619,8 @@ class GenericPatientsController < ApplicationController
     @foot_check_obs = {}
 
     @foot_check_encounters.each{|e|
-      value = @patient.person.observations.find(:all,
-        :joins => :encounter,
-        :conditions => ['encounter_type = ? AND encounter.encounter_id IN (?)',
-          diabetes_test_id, e.encounter_id],
-        :order => 'obs_datetime DESC')
+      value = @patient.person.observations.where(['encounter_type = ? AND encounter.encounter_id IN (?)',
+                                                  diabetes_test_id, e.encounter_id]).joins(:encounter).order('obs_datetime DESC')
 
       unless value.nil?
         @foot_check_obs[e.encounter_id] = value
@@ -2666,12 +2628,10 @@ class GenericPatientsController < ApplicationController
     }
 
     # Visual Acuity RIGHT EYE FUNDOSCOPY
-    @visual_acuity_encounters = @patient.encounters.find(:all,
-      :joins => :observations,
-      :conditions => ['concept_id IN (?)',
-        ConceptName.find_all_by_name(['LEFT EYE VISUAL ACUITY',
-            'RIGHT EYE VISUAL ACUITY']).map(&:concept_id)],
-      :order => 'obs_datetime DESC').uniq
+    @visual_acuity_encounters = @patient.encounters.where( ['concept_id IN (?)',
+                                                            ConceptName.find_all_by_name(['LEFT EYE VISUAL ACUITY',
+                                                                                          'RIGHT EYE VISUAL ACUITY']
+                                                            ).map(&:concept_id)]).joins(:observation).order('obs_datetime DESC').uniq
 
     if @visual_acuity_encounters.nil?
       @visual_acuity_encounters = []
@@ -2680,21 +2640,15 @@ class GenericPatientsController < ApplicationController
     @visual_acuity_obs = {}
 
     @visual_acuity_encounters.each{|e|
-      @visual_acuity_obs[e.encounter_id] = @patient.person.observations.find(:all,
-        :joins => :encounter,
-        :conditions => ['encounter_type = ? AND encounter.encounter_id = ?',
-          diabetes_test_id, e.encounter_id],
-        :order => 'obs_datetime DESC')
-    }
+      @visual_acuity_obs[e.encounter_id] = @patient.person.observations.where(['encounter_type = ? AND encounter.encounter_id = ?',
+                                                                               diabetes_test_id, e.encounter_id]).joins(:encounter).order('obs_datetime DESC')}
 
 
     # Fundoscopy
-    @fundoscopy_encounters = @patient.encounters.find(:all,
-      :joins => :observations,
-      :conditions => ['concept_id IN (?)',
-        ConceptName.find_all_by_name(['LEFT EYE FUNDOSCOPY',
-            'RIGHT EYE FUNDOSCOPY']).map(&:concept_id)],
-      :order => 'obs_datetime DESC').uniq
+    @fundoscopy_encounters = @patient.encounters.where(['concept_id IN (?)',
+                                                        ConceptName.find_all_by_name(['LEFT EYE FUNDOSCOPY',
+                                                                                      'RIGHT EYE FUNDOSCOPY']
+                                                        ).map(&:concept_id)]).joins(:observations).order('obs_datetime DESC').uniq
 
     if @fundoscopy_encounters.nil?
       @fundoscopy_encounters = []
@@ -2703,29 +2657,20 @@ class GenericPatientsController < ApplicationController
     @fundoscopy_obs = {}
 
     @fundoscopy_encounters.each{|e|
-      @fundoscopy_obs[e.encounter_id] = @patient.person.observations.find(:all,
-        :joins => :encounter,
-        :conditions => ['encounter_type = ? AND encounter.encounter_id IN (?)',
-          diabetes_test_id, e.encounter_id],
-        :order => 'obs_datetime DESC')
+      @fundoscopy_obs[e.encounter_id] = @patient.person.observations.where(['encounter_type = ? AND encounter.encounter_id IN (?)',
+                                                                            diabetes_test_id, e.encounter_id]).joins(:encounter).order('obs_datetime DESC')
     }
 
     # Urea
     urea_id = Concept.find_by_name('UREA').id
-    @urea_obs = @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['encounter_type = ? AND concept_id = ?',
-        diabetes_test_id, urea_id],
-      :order => 'obs_datetime DESC')
+    @urea_obs = @patient.person.observations.where(['encounter_type = ? AND concept_id = ?',
+                                                    diabetes_test_id, urea_id]).joins(:encounter).order('obs_datetime DESC')
 
 
     # Macrovascular
     macrovascular_id = Concept.find_by_name('MACROVASCULAR').id
-    @macrovascular_obs = @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['encounter_type = ? AND concept_id = ?',
-        diabetes_test_id, macrovascular_id],
-      :order => 'obs_datetime DESC')
+    @macrovascular_obs = @patient.person.observations.where(['encounter_type = ? AND concept_id = ?',
+                                                             diabetes_test_id, macrovascular_id]).joins(:encounter).order('obs_datetime DESC')
     render :layout => 'complications'
   end
 
@@ -2752,22 +2697,18 @@ class GenericPatientsController < ApplicationController
     date = (params[:date].sub("Next appointment:","").sub(/\((.*)/,"")).to_date
     encounter_type = EncounterType.find_by_name('APPOINTMENT')
     concept_id = ConceptName.find_by_name('APPOINTMENT DATE').concept_id
-    count = Observation.count(:all,
-      :joins => "INNER JOIN encounter e USING(encounter_id)",:group => "value_datetime",
-      :conditions =>["concept_id = ? AND encounter_type = ? AND value_datetime >= ? AND value_datetime <= ?",
-        concept_id,encounter_type.id,date.strftime('%Y-%m-%d 00:00:00'),date.strftime('%Y-%m-%d 23:59:59')])
+    count = Observation..where(["concept_id = ? AND encounter_type = ? AND value_datetime >= ? AND value_datetime <= ?",
+                                concept_id,encounter_type.id,date.strftime('%Y-%m-%d 00:00:00'),date.strftime('%Y-%m-%d 23:59:59')]).joins(
+        "INNER JOIN encounter e USING(encounter_id)").group("value_datetime").count
     count = count.values unless count.blank?
     count = '0' if count.blank?
-    render :text => "Next appointment: #{date.strftime('%d %B %Y')} (#{count})"
+    render plain: "Next appointment: #{date.strftime('%d %B %Y')} (#{count})"
   end
 
   def pdash_summary
-    latest_encounters = Encounter.find(:all,
-      :order => "encounter_datetime ASC,date_created ASC",
-      :conditions => ["patient_id = ? AND
-      encounter_datetime >= ? AND encounter_datetime <= ?",params[:patient_id],
-        params[:date].to_date.strftime('%Y-%m-%d 00:00:00'),
-        params[:date].to_date.strftime('%Y-%m-%d 23:59:59')])
+    latest_encounters = Encounter.where("encounter_datetime ASC,date_created ASC").order(["patient_id = ? AND
+      encounter_datetime >= ? AND encounter_datetime <= ?",params[:patient_id], params[:date].to_date.strftime('%Y-%m-%d 00:00:00'),
+                                                                                          params[:date].to_date.strftime('%Y-%m-%d 23:59:59')])
 
     @encounters = {}
 
@@ -2797,7 +2738,7 @@ class GenericPatientsController < ApplicationController
       @html+="</div><br />"
     end
 
-    render :text => @html.to_s
+    render plain: @html.to_s.html_safe
   end
 
   def patient_merge
@@ -2856,7 +2797,7 @@ class GenericPatientsController < ApplicationController
 			end
 		end
 
-    render:layout => "menu"
+    render :layout => "menu"
 	end
 
   def dde_merge_patients_menu
@@ -2923,7 +2864,7 @@ EOF
     end
 
     @html+="</table></body></html>"
-    render :text => @html ; return
+    render plain:  @html.to_s.html_safe ; return
 
   end
 
@@ -2992,7 +2933,7 @@ EOF
     end
 
     @html+="</table></body></html>"
-    render :text => @html ; return
+    render plain:  @html.html_safe ; return
   end
   
   def dde_merge_similar_patients
@@ -3041,7 +2982,7 @@ EOF
     ( slaves || [] ).each do | patient_id  |
 			Patient.merge(master,patient_id)
     end
-    render :text => "true" and return
+    render plain: "true" and return
   end
 
   def get_similar_patients

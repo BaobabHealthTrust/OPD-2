@@ -34,46 +34,46 @@ class GenericPersonNamesController < ApplicationController
       names = PersonNameCode.find_most_common(field_name, search_string).collect{|person_name| person_name.send(field_name)}
     end
     result = "<li>" + names.map{|n| n } .join("</li><li>") + "</li>"
-    render :text => result
+    render plain: result.html_safe
   end
 
   def search_ta(field_name, search_string)
     if search_string.blank?
-      traditional_authorities = TraditionalAuthority.find(:all, :limit => 10).collect{|ta| ta.send(field_name)}
+      traditional_authorities = TraditionalAuthority.all.limit(10).collect{|ta| ta.send(field_name)}
     else
-      traditional_authorities = TraditionalAuthority.find(:all, :limit => 10, :conditions => ["#{ search_string} LIKE ?", search_string ]).collect{|ta|ta.send(field_name)}
+      traditional_authorities = TraditionalAuthority.where(["#{ search_string} LIKE ?", search_string ]).limit(10).collect{|ta|ta.send(field_name)}
     end
     result = "<li>" + traditional_authorities.map{|n| n } .join("</li><li>") + "</li>"
-    render :text => result
+    render plain: result.html_safe
   end
 
   def search_district(field_name, search_string)
     if search_string.blank?
-      districts = District.find(:all, :limit => 10).collect{|district| district.send(field_name)}.uniq
+      districts = District.all.limit(10).collect{|district| district.send(field_name)}.uniq
     else
-      districts = District.find(:all, :limit => 10, :conditions => ["#{field_name} LIKE ?", "#{search_string}%" ]).collect{|district|district.send(field_name)}.uniq
+      districts = District.where(["#{field_name} LIKE ?", "#{search_string}%" ]).limit(10).collect{|district|district.send(field_name)}.uniq
     end
     result = "<li>" + districts.map{|n| n } .join("</li><li>") + "</li>"
-    render :text => result
+    render plain: result.html_safe
   end
   def search_ta(field_name, search_string)
     if search_string.blank?
-      traditional_authorities = TraditionalAuthority.find(:all, :limit => 10).collect{|ta| ta.send(field_name)}.uniq
+      traditional_authorities = TraditionalAuthority.all.limit(10).collect{|ta| ta.send(field_name)}.uniq
     else
-      traditional_authorities = TraditionalAuthority.find(:all, :limit => 10, :conditions => ["#{field_name} LIKE ?", "#{search_string}%" ]).collect{|ta|ta.send(field_name)}.uniq
+      traditional_authorities = TraditionalAuthority.where(["#{field_name} LIKE ?", "#{search_string}%" ]).limit(10).collect{|ta|ta.send(field_name)}.uniq
     end
     result = "<li>" + traditional_authorities.map{|n| n } .join("</li><li>") + "</li>"
-    render :text => result
+    render plain: result.html_safe
   end
 
   def search_village(field_name, search_string)
     if search_string.blank?
-      villages = Village.find(:all, :limit => 10).collect{|ta| ta.send(field_name)}
+      villages = Village.all.limit(10).collect{|ta| ta.send(field_name)}
     else
-      villages = Village.find(:all, :limit => 10, :conditions => ["#{field_name} LIKE ?", "#{search_string}%" ]).collect{|village|village.send(field_name)}.uniq
+      villages = Village.where(["#{field_name} LIKE ?", "#{search_string}%" ]).limit(10).collect{|village|village.send(field_name)}.uniq
     end
     result = "<li>" + villages.map{|n| n } .join("</li><li>") + "</li>"
-    render :text => result
+    render plain: result.html_safe
   end
 
   def edit

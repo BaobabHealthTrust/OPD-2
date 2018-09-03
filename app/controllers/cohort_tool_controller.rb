@@ -1516,11 +1516,9 @@ class CohortToolController < ApplicationController
       condition_string = "name LIKE \"#{concept}\" "
       surgical_concept_ids = ConceptName.find_by_sql("SELECT * FROM concept_name WHERE \
       #{condition_string} AND voided = 0" ).map{|c| c.concept_id}
-      encounters = Encounter.find(:all,
-        :joins => [:type, :observations, [:patient => :person]],\
-          :conditions => ["encounter_type = ? AND encounter.voided = 0 AND\
-				 value_coded IN (?) AND encounter_datetime >= ? AND encounter_datetime <= ?",\
-            @outpatient_diagnosis_id, surgical_concept_ids, @start_time, @end_time])
+      encounters = Encounter.where(["encounter_type = ? AND encounter.voided = 0 AND
+				                        value_coded IN (?) AND encounter_datetime >= ? AND encounter_datetime <= ?",
+            @outpatient_diagnosis_id, surgical_concept_ids, @start_time, @end_time]).joins([:type, :observations, [:patient => :person]])
       @surgical_encounter_ids << encounters.map(&:id)
       @total_surgical_patients+=encounters.map{|e| e.patient_id}.uniq.size
     }
@@ -1533,11 +1531,10 @@ class CohortToolController < ApplicationController
       condition_string = "name LIKE \"#{concept}\" "
       psychiatric_concept_ids = ConceptName.find_by_sql("SELECT * FROM concept_name WHERE \
       #{condition_string} AND voided = 0" ).map{|c| c.concept_id}
-      encounters = Encounter.find(:all,
-        :joins => [:type, :observations, [:patient => :person]],\
-          :conditions => ["encounter_type = ? AND encounter.voided = 0 AND\
-				 value_coded IN (?) AND encounter_datetime >= ? AND encounter_datetime <= ?",\
-            @outpatient_diagnosis_id, psychiatric_concept_ids, @start_time, @end_time])
+      encounters = Encounter.where(["encounter_type = ? AND encounter.voided = 0 AND
+				 value_coded IN (?) AND encounter_datetime >= ? AND encounter_datetime <= ?",
+            @outpatient_diagnosis_id, psychiatric_concept_ids, @start_time, @end_time]).joins([:type, :observations, [:patient => :person]])
+
       @psychiatric_encounter_ids << encounters.map(&:id)
       @total_psychiatric_patients+=encounters.map{|e| e.patient_id}.uniq.size
     }
@@ -1547,10 +1544,11 @@ class CohortToolController < ApplicationController
     admission_encounter_id = EncounterType.find_by_name("ADMIT PATIENT").encounter_type_id
     orthro_paedic_ward = 'Ward 6A'
     @orthro_paedic_encounter_id = []
-    encounters = Encounter.find(:all, :joins => [:type, :observations],\
-        :conditions => ['encounter_type = ? AND encounter_datetime >= ? AND
+
+    encounters = Encounter.where(['encounter_type = ? AND encounter_datetime >= ? AND
         encounter_datetime <= ? AND value_text = ?', admission_encounter_id, @start_time, @end_time,
-        orthro_paedic_ward])
+        orthro_paedic_ward]).joins([:type, :observations])
+
     @orthro_paedic_encounter_id = encounters.map(&:id).flatten
     @orthro_patients = encounters.map{|e| e.patient_id}.uniq.size
 
@@ -1563,10 +1561,9 @@ class CohortToolController < ApplicationController
     @short_stay_patient_ids = []
     @ward_encounters_ids = {}
     wards.each { |ward|
-      encounters = Encounter.find(:all, :joins => [:type, :observations],\
-          :conditions => ['encounter_type = ? AND encounter_datetime >= ? AND
+      encounters = Encounter.where(['encounter_type = ? AND encounter_datetime >= ? AND
         encounter_datetime <= ? AND value_text = ?', admission_encounter_id, @start_time, @end_time,
-          ward.to_s])
+          ward.to_s]).joins([:type, :observations])
       @short_stay_admission_encounters_ids << encounters.map(&:id)
       total_patients = encounters.map{|e| e.patient_id}.uniq.size
       @admitted[ward] = total_patients
@@ -1589,10 +1586,9 @@ class CohortToolController < ApplicationController
 
     @other_admissions = []
     @other_admissions_encounters_ids = []
-    other_admissions = Encounter.find(:all, :joins => [:type, :observations],\
-        :conditions => ['encounter_type = ? AND encounter_datetime >= ? AND
+    other_admissions = Encounter.where(['encounter_type = ? AND encounter_datetime >= ? AND
         encounter_datetime <= ? AND value_text NOT IN (?)', admission_encounter_id, @start_time, @end_time,
-        wards])
+        wards]).joins([:type, :observations])
     @other_admissions_encounters_ids = other_admissions.map(&:id)
     @other_admissions = other_admissions.map{|e| e.patient_id}.uniq.size
 
@@ -1603,10 +1599,10 @@ class CohortToolController < ApplicationController
     @medical_encounters_ids = []
     medical_wards = ['Ward 3A', 'Ward 4B', 'Ward 2A','Lepra']
     medical_wards.each { |ward|
-      encounters = Encounter.find(:all, :joins => [:type, :observations],\
-          :conditions => ['encounter_type = ? AND encounter_datetime >= ? AND
+      encounters = Encounter.where(
+          ['encounter_type = ? AND encounter_datetime >= ? AND
         encounter_datetime <= ? AND value_text = ?', admission_encounter_id, @start_time, @end_time,
-          ward.to_s])
+          ward.to_s]).joins([:type, :observations])
       @medical_encounters_ids << encounters.map(&:id)
       @total_medical_admissions+=encounters.map{|e| e.patient_id}.uniq.size
 
@@ -1618,10 +1614,9 @@ class CohortToolController < ApplicationController
     @total_surgical_admissions = 0
     @surgical_admissions_encounter_ids = []
     surgical_wards.each { |ward|
-      encounters = Encounter.find(:all, :joins => [:type, :observations],\
-          :conditions => ['encounter_type = ? AND encounter_datetime >= ? AND
+      encounters = Encounter.where(['encounter_type = ? AND encounter_datetime >= ? AND
         encounter_datetime <= ? AND value_text = ?', admission_encounter_id, @start_time, @end_time,
-          ward.to_s])
+          ward.to_s]).joins([:type, :observations])
       @surgical_admissions_encounter_ids << encounters.map(&:id)
       @total_surgical_admissions+=encounters.map{|e| e.patient_id}.uniq.size
     }
@@ -1631,10 +1626,9 @@ class CohortToolController < ApplicationController
     @obs_gynae_admissions = 0
     @obs_gynae_encounter_ids = []
     obs_and_gynae_wards.each { |ward|
-      encounters = Encounter.find(:all, :joins => [:type, :observations],\
-          :conditions => ['encounter_type = ? AND encounter_datetime >= ? AND
+      encounters = Encounter.where(['encounter_type = ? AND encounter_datetime >= ? AND
         encounter_datetime <= ? AND value_text = ?', admission_encounter_id, @start_time, @end_time,
-          ward.to_s])
+          ward.to_s]).joins([:type, :observations])
       @obs_gynae_encounter_ids << encounters.map(&:id)
       @obs_gynae_admissions+=encounters.map{|e| e.patient_id}.uniq.size
     }
@@ -1647,8 +1641,8 @@ class CohortToolController < ApplicationController
     @assesment_area_dealths_encounters_ids = []
     @short_stay_ward_dealths = []
     @short_stay_ward_dealths_encounters_ids = []
-    encounters = Encounter.find(:all, :joins => [:type], :conditions => ['encounter_type_id =? AND
-     encounter_datetime >= ? AND encounter_datetime <= ?', transfer_out_encounter_id, @start_time, @end_time ])
+    encounters = Encounter.where(['encounter_type_id =? AND
+     encounter_datetime >= ? AND encounter_datetime <= ?', transfer_out_encounter_id, @start_time, @end_time ]).joins([:type])
     encounters.each { | encounter |
       observations = encounter.observations
       observations.each { | observation |
@@ -1664,9 +1658,9 @@ class CohortToolController < ApplicationController
 
     #to find short stay ward dealths we need first to get encounters of the patients admitted in short stay wards
 
-    encounters = Encounter.find(:all, :joins => [:type], :conditions => ['encounter_type_id =? AND
+    encounters = Encounter.where(['encounter_type_id =? AND
         encounter_datetime >= ? AND encounter_datetime <= ? AND patient_id IN (?)', transfer_out_encounter_id, @start_time,
-        @end_time, @short_stay_patient_ids ])
+        @end_time, @short_stay_patient_ids ]).joins(:type)
     encounters.each { | encounter |
       observations = encounter.observations
       observations.each { | observation |
@@ -1736,7 +1730,7 @@ class CohortToolController < ApplicationController
     end
 
     @medical_patients = []
-    encounters = Encounter.find(:all, :conditions => ['encounter_id IN (?)',encounter_ids])
+    encounters = Encounter.where(['encounter_id IN (?)',encounter_ids])
     encounters.each { | encounter |
       names = encounter.patient.person.names.last
       first_name = names.given_name.capitalize rescue ''
@@ -1758,13 +1752,11 @@ class CohortToolController < ApplicationController
     @concept_ids = ConceptName.find_by_sql("SELECT * FROM concept_name WHERE \
         #{condition_string} AND voided = 0" ).map{|c| c.concept_id}
 
-    Encounter.find(:all,
-      :joins => [:type, :observations, [:patient => :person]],\
-        :conditions => ["encounter_type = ? AND encounter.voided = 0 AND\
-																		value_coded IN (?) AND encounter_datetime >= ?\
-																		AND encounter_datetime <= ?",\
-          @outpatient_diagnosis_id, @concept_ids, start_date, end_date]\
-      ).map{|e| e. patient_id}.uniq.size
+    Encounter.where(["encounter_type = ? AND encounter.voided = 0 AND
+																		value_coded IN (?) AND encounter_datetime >= ?
+																		AND encounter_datetime <= ?",
+          @outpatient_diagnosis_id, @concept_ids, start_date, end_date]
+      ).joins([:type, :observations, [:patient => :person]]).map{|e| e. patient_id}.uniq.size
 	end
 
 
@@ -1796,12 +1788,12 @@ class CohortToolController < ApplicationController
       @formated_start_date = @start_date.strftime('%A, %d, %b, %Y')
       @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
 
-      people = Person.find(:all,:include =>{:patient=>{:encounters=>{:type=>{}}}},
+      people = Person.where(
         :conditions => ["patient.patient_id IS NOT NULL AND encounter_type.name IN (?)
         AND person.date_created >= TIMESTAMP(?)
         AND person.date_created  <= TIMESTAMP(?)", ["TREATMENT","OUTPATIENT DIAGNOSIS"],
           @start_date.strftime('%Y-%m-%d 00:00:00'),
-          @end_date.strftime('%Y-%m-%d 23:59:59')])
+          @end_date.strftime('%Y-%m-%d 23:59:59')]).includes({:patient=>{:encounters=>{:type=>{}}}})
       peoples = []
       people.each do  |person|
         if (@age_groups.include?("< 6 MONTHS"))
@@ -1906,12 +1898,12 @@ class CohortToolController < ApplicationController
       @formated_start_date = @start_date.strftime('%A, %d, %b, %Y')
       @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
 
-      people = Person.find(:all,:include =>{:patient=>{:encounters=>{:type=>{}}}},
+      people = Person.where(
         :conditions => ["patient.patient_id IS NOT NULL AND encounter_type.name IN (?)
         AND person.date_created >= TIMESTAMP(?)
         AND person.date_created  <= TIMESTAMP(?)", ["TREATMENT","OUTPATIENT DIAGNOSIS"],
           @start_date.strftime('%Y-%m-%d 00:00:00'),
-          @end_date.strftime('%Y-%m-%d 23:59:59')])
+          @end_date.strftime('%Y-%m-%d 23:59:59')]).includes({:patient=>{:encounters=>{:type=>{}}}})
       @peoples = Hash.new(0)
       people.each do  |person|
 
@@ -2048,11 +2040,10 @@ class CohortToolController < ApplicationController
         :conditions => ["name IN (?)",["Additional diagnosis","Diagnosis",
             "primary diagnosis","secondary diagnosis"]]).map(&:concept_id)
 
-      observation = Observation.find(:all, :include => {:person =>{}},
-        :conditions => ["obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime
+      observation = Observation.where(["obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime
         <= TIMESTAMP(?) AND obs.concept_id IN (?)",
           @start_date.strftime('%Y-%m-%d 00:00:00'),
-          @end_date.strftime('%Y-%m-%d 23:59:59'),concept_ids])
+          @end_date.strftime('%Y-%m-%d 23:59:59'),concept_ids]).includes({:person =>{}})
       observation.each do |obs|
         next if obs.answer_concept.blank?
         next if obs.person.blank?
@@ -2161,13 +2152,12 @@ class CohortToolController < ApplicationController
       @formated_start_date = @start_date.strftime('%A, %d, %b, %Y')
       @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
 
-      concept_ids = ConceptName.find(:all, :conditions => ["name IN (?)",["Additional diagnosis","Diagnosis",
+      concept_ids = ConceptName.where(["name IN (?)",["Additional diagnosis","Diagnosis",
             "primary diagnosis","secondary diagnosis"]]).map(&:concept_id)
 
-      observations = Observation.find(:all, :group => "obs.person_id, DATE(obs_datetime)", :include => {:person =>{}},
-        :conditions => ["obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime <= TIMESTAMP(?) AND
+      observations = Observation.where(["obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime <= TIMESTAMP(?) AND
           obs.concept_id IN (?) AND obs.value_coded =? ", @start_date.strftime('%Y-%m-%d 00:00:00'),
-          @end_date.strftime('%Y-%m-%d 23:59:59'),concept_ids, diagnosis_concept_id])
+          @end_date.strftime('%Y-%m-%d 23:59:59'),concept_ids, diagnosis_concept_id]).group("obs.person_id, DATE(obs_datetime)").includes({:person =>{}})
       @diagnosis_specific_data = {}
 
       observations.each do |observation|
@@ -2217,15 +2207,13 @@ class CohortToolController < ApplicationController
       @diagnosis_report = Hash.new(0)
       @formated_start_date = @start_date.strftime('%A, %d, %b, %Y')
       @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
-      concept_ids = ConceptName.find(:all,
-        :conditions => ["name IN (?)",["Additional diagnosis","Diagnosis",
+      concept_ids = ConceptName.where(["name IN (?)",["Additional diagnosis","Diagnosis",
             "primary diagnosis","secondary diagnosis"]]).map(&:concept_id)
 
-      observation = Observation.find(:all, :include => {:person =>{}},
-        :conditions => ["obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime
+      observation = Observation.where(["obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime
         <= TIMESTAMP(?) AND obs.concept_id IN (?)",
           @start_date.strftime('%Y-%m-%d 00:00:00'),
-          @end_date.strftime('%Y-%m-%d 23:59:59'),concept_ids])
+          @end_date.strftime('%Y-%m-%d 23:59:59'),concept_ids]).includes({:person =>{}})
 
       observation.each do |obs|
         next if obs.answer_concept.blank?
@@ -2334,10 +2322,9 @@ class CohortToolController < ApplicationController
       @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
       observation = session[:observation]
       if observation.blank?
-        observation =Observation.find(:all, :include=>{:encounter=>{:type=>{}},  :person=>{}},
-          :conditions => ["encounter_type.name IN (?) AND obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime  <= TIMESTAMP(?)",
+        observation =Observation.where(["encounter_type.name IN (?) AND obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime  <= TIMESTAMP(?)",
             ['outpatient diagnosis','treatment'], @start_date.strftime('%Y-%m-%d 00:00:00'),
-            @end_date.strftime('%Y-%m-%d 23:59:59')])
+            @end_date.strftime('%Y-%m-%d 23:59:59')]).includes({:encounter=>{:type=>{}},  :person=>{}})
         session[:observation] = observation
       end
       records_per_page = CoreService.get_global_property_value('records_per_page') || 20
@@ -2396,14 +2383,13 @@ class CohortToolController < ApplicationController
       @diagnosis_by_address = {}
       @formated_start_date = @start_date.strftime('%A, %d, %b, %Y')
       @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
-      concept_ids = ConceptName.find(:all, :conditions => ["name IN (?)",
+      concept_ids = ConceptName.where(["name IN (?)",
           ["Additional diagnosis","Diagnosis", "primary diagnosis",
             "secondary diagnosis"]]).map(&:concept_id)
-      observation = Observation.find(:all, :include=>{:person=>{}},
-        :conditions => ["obs.obs_datetime >= TIMESTAMP(?)
+      observation = Observation.where(["obs.obs_datetime >= TIMESTAMP(?)
                     AND obs.obs_datetime  <= TIMESTAMP(?) AND obs.concept_id IN (?)",
           @start_date.strftime('%Y-%m-%d 00:00:00'), @end_date.strftime('%Y-%m-%d 23:59:59'),
-          concept_ids])
+          concept_ids]).includes({:person=>{}})
 
       observation.each do | obs|
         next if obs.person.blank?
@@ -2587,12 +2573,11 @@ class CohortToolController < ApplicationController
       @disaggregated_diagnosis = {}
       @formated_start_date = @start_date.strftime('%A, %d, %b, %Y')
       @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
-      concept_ids = ConceptName.find(:all, :conditions => ["name IN (?)",["Additional diagnosis",
+      concept_ids = ConceptName.where(["name IN (?)",["Additional diagnosis",
             "Diagnosis", "primary diagnosis","secondary diagnosis"]]).map(&:concept_id)
-      observation =Observation.find(:all,:include=>{:person=>{}},
-        :conditions => ["obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime  <= TIMESTAMP(?) AND obs.concept_id IN (?)",
+      observation =Observation.where(["obs.obs_datetime >= TIMESTAMP(?) AND obs.obs_datetime  <= TIMESTAMP(?) AND obs.concept_id IN (?)",
           @start_date.strftime('%Y-%m-%d 00:00:00'), @end_date.strftime('%Y-%m-%d 23:59:59'),
-          concept_ids])
+          concept_ids]).includes({:person=>{}})
 
       observation.each do | obs|
         next if obs.person.blank?
@@ -2648,10 +2633,9 @@ class CohortToolController < ApplicationController
         obs_concept_name = "Transfer to"
       end
 
-      Observation.find(:all, :include=>{:encounter=>{:type=>{}}, :concept=>{:concept_names=>{}}},
-        :conditions => ["encounter_type.name = ? AND concept_name.name = ?
+      Observation.where(["encounter_type.name = ? AND concept_name.name = ?
 											 									AND encounter.encounter_datetime >= TIMESTAMP(?) AND encounter.encounter_datetime  <= TIMESTAMP(?)",
-          report_encounter_name, obs_concept_name, @start_date, @end_date]). each do |obs|
+          report_encounter_name, obs_concept_name, @start_date, @end_date]).includes({:encounter=>{:type=>{}}, :concept=>{:concept_names=>{}}}).each do |obs|
         @referral_locations[Location.find(obs.to_s(["short", "order"]).to_s.split(":")[1].to_i).name]+=1
       end
     end
@@ -2732,20 +2716,16 @@ class CohortToolController < ApplicationController
       @end_date = @start_date + 1.month - 1.day
       @disaggregated_diagnosis = {}
 
-      idsr_monthly_set = ConceptName.find(:all,
-        :conditions=>["name IN (?)",["Idsr Monthly Summary"]]).map(&:concept_id)
+      idsr_monthly_set = ConceptName.where(["name IN (?)",["Idsr Monthly Summary"]]).map(&:concept_id)
 
 
-      idsr_monthly_set_members = ConceptSet.find(:all,
-        :conditions=>["concept_set IN (?)",idsr_monthly_set]).map(&:concept_id)
+      idsr_monthly_set_members = ConceptSet.where(["concept_set IN (?)",idsr_monthly_set]).map(&:concept_id)
 
-      concept_ids = ConceptName.find(:all,
-       :conditions => ["concept_name.concept_id IN (?)",
+      concept_ids = ConceptName.where(["concept_name.concept_id IN (?)",
          idsr_monthly_set_members]).map(&:concept_id)
 
-      observation = Observation.find(:all,:include=>{:person=>{}},
-           :conditions => ["obs.obs_datetime >= ? AND obs.obs_datetime <= ?
-             AND obs.value_coded IN (?)",@start_date, @end_date,concept_ids])
+      observation = Observation.where(["obs.obs_datetime >= ? AND obs.obs_datetime <= ?
+             AND obs.value_coded IN (?)",@start_date, @end_date,concept_ids]).includes({:person=>{}})
 
       observation.each do | obs|
         next if obs.person.blank?
@@ -2819,20 +2799,17 @@ class CohortToolController < ApplicationController
       @formated_start_date = @start_date
       @formated_end_date = @end_date
 
-      idsr_monthly_set = ConceptName.find(:all,
-        :conditions=>["name IN (?)",["Idsr Monthly Summary"]]).map(&:concept_id)
+      idsr_monthly_set = ConceptName.where(["name IN (?)",["Idsr Monthly Summary"]]).map(&:concept_id)
 
 
-      idsr_monthly_set_members = ConceptSet.find(:all,
-        :conditions=>["concept_set IN (?)",idsr_monthly_set]).map(&:concept_id)
+      idsr_monthly_set_members = ConceptSet.where(["concept_set IN (?)",idsr_monthly_set]).map(&:concept_id)
 
-      concept_ids = ConceptName.find(:all,
-       :conditions => ["concept_name.concept_id IN (?)",
+      concept_ids = ConceptName.where(["concept_name.concept_id IN (?)",
          idsr_monthly_set_members]).map(&:concept_id)
 
-      observation = Observation.find(:all,:include=>{:person=>{}},
-           :conditions => ["obs.obs_datetime >= ? AND obs.obs_datetime <= ?
-             AND obs.value_coded IN (?)",@start_date.strftime('%Y-%m-%d 00:00:00'), @end_date.strftime('%Y-%m-%d 23:59:59'),concept_ids])
+      observation = Observation.where(["obs.obs_datetime >= ? AND obs.obs_datetime <= ?
+             AND obs.value_coded IN (?)",@start_date.strftime('%Y-%m-%d 00:00:00'), @end_date.strftime('%Y-%m-%d 23:59:59'),concept_ids]).includes(
+          {:person=>{}})
 
       observation.each do | obs|
         next if obs.person.blank?

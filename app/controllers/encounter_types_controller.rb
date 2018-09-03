@@ -2,7 +2,7 @@ class EncounterTypesController < GenericEncounterTypesController
 
   def index
   #raise current_user_roles.to_yaml
-    role_privileges = RolePrivilege.find(:all,:conditions => ["role IN (?)", current_user_roles])
+    role_privileges = RolePrivilege.where(["role IN (?)", current_user_roles])
     privileges = role_privileges.each.map{ |role_privilege_pair| role_privilege_pair["privilege"].humanize }
 
     @show_tasks_button = CoreService.get_global_property_value('show.tasks.button').to_s == "true" rescue false
@@ -29,7 +29,7 @@ class EncounterTypesController < GenericEncounterTypesController
 
     # TODO add clever sorting
     @encounter_types = EncounterType.find(:all).map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
-    @available_encounter_types = Dir.glob(RAILS_ROOT+"/app/views/encounters/*.rhtml").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
+    @available_encounter_types = Dir.glob(Rails.root.to_s+"/app/views/encounters/*.erb").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
     @available_encounter_types -= @available_encounter_types - @encounter_types
 
     @available_encounter_types = ((@available_encounter_types) - ((@available_encounter_types - roles_for_the_user) + (roles_for_the_user - @available_encounter_types)))

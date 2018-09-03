@@ -94,14 +94,11 @@ class GenericLabController < ApplicationController
   
   def id_identifiers(patient)
     identifier_type = ["Legacy Pediatric id","National id","Legacy National id"]
-    identifier_types = PatientIdentifierType.find(:all,
-      :conditions=>["name IN (?)",identifier_type]
+    identifier_types = PatientIdentifierType.where(["name IN (?)",identifier_type]
     ).collect{| type |type.id }
     
-    PatientIdentifier.find(:all,
-      :conditions=>["patient_id=? AND identifier_type IN (?)",
+    PatientIdentifier.where(["patient_id=? AND identifier_type IN (?)",
         patient.id,identifier_types]).collect{| i | i.identifier }
   end
-
 
 end

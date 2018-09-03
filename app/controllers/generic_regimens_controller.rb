@@ -15,10 +15,9 @@ class GenericRegimensController < ApplicationController
 
 		@reason_for_art_eligibility = PatientService.reason_for_art_eligibility(@patient)
 		@current_weight = PatientService.get_patient_attribute_value(@patient, "current_weight")
-		@tb_encounter = Encounter.find(:first,:order => "encounter_datetime DESC,date_created DESC",
-                    :conditions=>["patient_id = ? AND encounter_type = ?", 
-                    @patient.id, EncounterType.find_by_name("TB visit").id], 
-                    :include => [:observations]) rescue nil
+		@tb_encounter = Encounter.where(["patient_id = ? AND encounter_type = ?",
+																		 @patient.id, EncounterType.find_by_name("TB visit").id]).includes(:observations).order(
+				"encounter_datetime DESC,date_created DESC").first rescue nil
 
 		@tb_programs = @patient.patient_programs.in_uncompleted_programs(['TB PROGRAM', 'MDR-TB PROGRAM'])
 		
@@ -30,25 +29,27 @@ class GenericRegimensController < ApplicationController
     end
 		@current_regimen_names_for_programs = current_regimen_names_for_programs
 		
-		@current_hiv_program_state = PatientProgram.find(:first, :joins => :location, :conditions => ["patient_id = ? AND program_id = ? AND location.location_id = ? AND date_completed IS NULL", @patient.id, Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id, Location.current_health_center]).patient_states.current.first.program_workflow_state.concept.fullname rescue ''		
+		@current_hiv_program_state = PatientProgram.where(["patient_id = ? AND program_id = ? AND location.location_id = ? AND date_completed IS NULL",
+																											 @patient.id, Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id,
+																											 Location.current_health_center]).joins(:location).first.patient_states.current.first.program_workflow_state.concept.fullname rescue ''
+
 		session_date = session[:datetime].to_date rescue Date.today
 
-		pre_hiv_clinic_consultation = Encounter.find(:first,:order => "encounter_datetime DESC,date_created DESC",
-		    :conditions =>["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
-		    session_date.to_date, @patient.id, EncounterType.find_by_name('PART_FOLLOWUP').id])
+		pre_hiv_clinic_consultation = Encounter.where(["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
+		    session_date.to_date, @patient.id, EncounterType.find_by_name('PART_FOLLOWUP').id]).order("encounter_datetime DESC,date_created DESC").first
 
-		hiv_clinic_consultation = Encounter.find(:first,:order => "encounter_datetime DESC,date_created DESC",
-            :conditions =>["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
-            session_date.to_date, @patient.id, EncounterType.find_by_name('HIV CLINIC CONSULTATION').id])
+		hiv_clinic_consultation = Encounter.where(["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
+            session_date.to_date, @patient.id, EncounterType.find_by_name('HIV CLINIC CONSULTATION').id]).order(
+				           "encounter_datetime DESC,date_created DESC").first
 		@hiv_clinic_consultation = false
 
 		if ((not pre_hiv_clinic_consultation.blank?) or (not hiv_clinic_consultation.blank?))
 			@hiv_clinic_consultation = true		
 		end
 
-		treatment_obs = Encounter.find(:first,:order => "encounter_datetime DESC,date_created DESC",
-		    :conditions => ["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
-		    session_date, @patient.id, EncounterType.find_by_name('TREATMENT').id]).observations rescue []
+		treatment_obs = Encounter.where(["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
+		    session_date, @patient.id, EncounterType.find_by_name('TREATMENT').id]).order(
+				   "encounter_datetime DESC,date_created DESC").first.observations rescue []
 
 		tb_medication_prescribed = false
 		arvs_prescribed = false
@@ -83,10 +84,9 @@ class GenericRegimensController < ApplicationController
 			@prescribe_tb_drugs = true
 		end
 
-		sulphur_allergy_obs = Encounter.find(:first,:order => "encounter_datetime DESC,date_created DESC",
-			:conditions => ["patient_id = ? AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",
-			@patient.id, EncounterType.find(:all,:select => 'encounter_type_id', 
-      :conditions => ["name IN (?)",["HIV CLINIC CONSULTATION", "TB VISIT"]]),session_date.to_date]).observations rescue []
+		sulphur_allergy_obs = Encounter.where(["patient_id = ? AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",
+			@patient.id, EncounterType.select('encounter_type_id').where(["name IN (?)",["HIV CLINIC CONSULTATION", "TB VISIT"]]),session_date.to_date]).order(
+				"encounter_datetime DESC,date_created DESC").first.observations rescue []
 
 		@alergic_to_suphur = false
 		(sulphur_allergy_obs || []).each do | obs |
@@ -95,11 +95,10 @@ class GenericRegimensController < ApplicationController
 			end
 		end
 
-		hiv_clinic_consultation_obs = Encounter.find(:first,
-      :order => "encounter_datetime DESC,date_created DESC",
-			:conditions => ["patient_id = ? AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",
-			@patient.id, EncounterType.find(:all,:select => 'encounter_type_id', 
-      :conditions => ["name IN (?)",["HIV CLINIC CONSULTATION"]]),session_date.to_date]).observations rescue []
+		hiv_clinic_consultation_obs = Encounter.where(["patient_id = ? AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",
+			@patient.id, EncounterType.select('encounter_type_id').where(
+						["name IN (?)",["HIV CLINIC CONSULTATION"]]),session_date.to_date]).order(
+				"encounter_datetime DESC,date_created DESC").first.observations rescue []
 
 		@prescribe_art_drugs = false
 		(hiv_clinic_consultation_obs || []).each do | obs |
@@ -117,7 +116,7 @@ class GenericRegimensController < ApplicationController
 
             if encounter.name.humanize.include?('Hiv staging') || encounter.name.humanize.include?('Tb visit') || encounter.name.humanize.include?('Hiv clinic consultation') 
              
-                encounter = Encounter.find(encounter.id, :include => [:observations])
+                encounter = Encounter.find(encounter.id).includes(:observations)
 
                 for obs in encounter.observations do
                     if obs.concept_id == ConceptName.find_by_name("IS PATIENT PREGNANT?").concept_id
@@ -318,9 +317,9 @@ class GenericRegimensController < ApplicationController
 			end
 			
 			weight = @current_weight = PatientService.get_patient_attribute_value(@patient, "current_weight")
-			regimen_id = Regimen.all(:conditions =>  ['min_weight <= ? AND max_weight >= ? AND concept_id = ?', weight, weight, drug.concept_id]).first.regimen_id
+			regimen_id = Regimen.where(['min_weight <= ? AND max_weight >= ? AND concept_id = ?', weight, weight, drug.concept_id]).first.regimen_id
 			
-			orders = RegimenDrugOrder.all(:conditions => {:regimen_id => regimen_id})			
+			orders = RegimenDrugOrder.where({:regimen_id => regimen_id})
 			# orders = RegimenDrugOrder.all(:conditions => {:regimen_id => Regimen.find_by_concept_id(drug.concept_id).regimen_id})
 			orders.each do |order|
 				drug = Drug.find(order.drug_inventory_id)
@@ -389,29 +388,25 @@ class GenericRegimensController < ApplicationController
         [order.drug.name , order.dose, order.frequency , order.units , r.id ]
       end
     end
-    render :text => @options.to_json 
+    render plain: @options.to_json
 	end
 
 	# Look up likely durations for the regimen
 	def durations
 		@regimen = Regimen.find_by_concept_id(params[:id], :include => :regimen_drug_orders)
 		@drug_id = @regimen.regimen_drug_orders.first.drug_inventory_id rescue nil
-		render :text => "No matching durations found for regimen" and return unless @drug_id
+		render plain: "No matching durations found for regimen" and return unless @drug_id
 
 		# Grab the 10 most popular durations for this drug
 		amounts = []
-		orders = DrugOrder.find(:all, 
-			:select => 'DATEDIFF(orders.auto_expire_date, orders.start_date) as duration_days',
-			:joins => 'LEFT JOIN orders ON orders.order_id = drug_order.order_id AND orders.voided = 0',
-			:limit => 10, 
-			:group => 'drug_inventory_id, DATEDIFF(orders.auto_expire_date, orders.start_date)', 
-			:order => 'count(*)', 
-			:conditions => {:drug_inventory_id => @drug_id})      
+		orders = DrugOrder..select('DATEDIFF(orders.auto_expire_date, orders.start_date) as duration_days'
+		).where({:drug_inventory_id => @drug_id}).joins('LEFT JOIN orders ON orders.order_id = drug_order.order_id AND orders.voided = 0'
+		).group().order('count(*)').limit(10)find
 		orders.each {|order|
 			amounts << "#{order.duration_days.to_f}" unless order.duration_days.blank?
 		}  
 		amounts = amounts.flatten.compact.uniq
-		render :text => "<li>" + amounts.join("</li><li>") + "</li>"
+		render plain: ("<li>" + amounts.join("</li><li>") + "</li>").html_safe
 	end
 
 	private

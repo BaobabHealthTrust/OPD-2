@@ -9,7 +9,7 @@ class GenericLocationController < ApplicationController
     
     def search
       @names = search_locations(params[:search_string].to_s, params[:act].to_s)
-      render :text => "<li>" + @names.map{|n| n } .join("</li><li>") + "</li>"           
+      render plain: ("<li>" + @names.map{|n| n } .join("</li><li>") + "</li>").html_safe
     end
 
     def search_locations(search_string, act)

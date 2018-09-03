@@ -60,8 +60,7 @@ class GenericPatientIdentifiersController < ApplicationController
     if prefix != nil
       identifier = prefix.to_s + identifier.to_s
     end
-    identifiers = PatientIdentifier.find(:all,
-              :conditions => ["identifier_type = ? AND identifier = ?", type, identifier]) rescue nil
+    identifiers = PatientIdentifier.where(["identifier_type = ? AND identifier = ?", type, identifier]) rescue nil
     return false if identifiers.blank?
     return true
   end

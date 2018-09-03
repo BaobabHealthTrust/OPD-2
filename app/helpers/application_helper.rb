@@ -126,7 +126,7 @@ module ApplicationHelper
   def version
     #"Bart Version: #{BART_VERSION}#{' ' + BART_SETTINGS['installation'] if BART_SETTINGS}, #{File.ctime(File.join(RAILS_ROOT, 'config', 'environment.rb')).strftime('%d-%b-%Y')}"
     style = "style='background-color:red;'" unless session[:datetime].blank?
-    "OPD Version: #{BART_VERSION} - <span #{style}>#{(session[:datetime].to_date rescue Date.today).strftime('%A, %d-%b-%Y')}</span>"
+    "OPD Version: #{OPD_VERSION} - <span #{style}>#{(session[:datetime].to_date rescue Date.today).strftime('%A, %d-%b-%Y')}</span>"
   end
   
   def welcome_message
@@ -182,7 +182,7 @@ module ApplicationHelper
   
   def concept_set_options(concept_name)
     concept_id = concept_id = ConceptName.find_by_name(concept_name).concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
     options_for_select(options)
   end
@@ -191,12 +191,12 @@ module ApplicationHelper
   def selected_concept_set_options(concept_name, exclude_concept_name)
     concept_id = concept_id = ConceptName.find_by_name(concept_name).concept_id
     
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     exclude_concept_id = ConceptName.find_by_name(exclude_concept_name).concept_id
     
-    exclude_set = ConceptSet.find_all_by_concept_set(exclude_concept_id, :order => 'sort_weight')
+    exclude_set = ConceptSet.where(concept_set: exclude_concept_id).order('sort_weight')
     exclude_options = exclude_set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     options_for_select(options - exclude_options)
@@ -205,7 +205,7 @@ module ApplicationHelper
   def concept_set(concept_name)
     concept_id = ConceptName.find_by_name(concept_name).concept_id
     
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname] }
     return options
   end
@@ -230,7 +230,7 @@ module ApplicationHelper
   def concept_sets(concept_name)
 	concept_id = ConceptName.find_by_name(concept_name).concept_id
 
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     set.map{|item|next if item.concept.blank? ; item.concept.fullname }
   end
 
@@ -252,9 +252,8 @@ module ApplicationHelper
 	end
 
   def preferred_user_keyboard
-    UserProperty.find(:first,
-      :conditions =>["property = ? AND user_id = ?",'preferred.keyboard', 
-      current_user.id]).property_value rescue 'abc'
+    UserProperty.where(["property = ? AND user_id = ?",'preferred.keyboard',
+      current_user.id]).first.property_value rescue 'abc'
   end
 
   def create_from_dde_server                                                    
@@ -263,7 +262,7 @@ module ApplicationHelper
 
   def current_user_roles                                                        
     user_roles = UserRole.find(:all,:conditions =>["user_id = ?", current_user.id]).collect{|r|r.role}
-    RoleRole.find(:all,:conditions => ["child_role IN (?)", user_roles]).collect{|r|user_roles << r.parent_role}
+    RoleRole.where(["child_role IN (?)", user_roles]).collect{|r|user_roles << r.parent_role}
     return user_roles.uniq
     
   end

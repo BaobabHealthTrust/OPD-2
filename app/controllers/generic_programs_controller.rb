@@ -1,15 +1,12 @@
 class GenericProgramsController < ApplicationController
-  before_filter :find_patient, :except => [:void, :states]
+  before_action :find_patient, :except => [:void, :states]
   
   def new
     session[:return_to] = nil
     session[:return_to] = params[:return_to] unless params[:return_to].blank?
-    program_names = PatientProgram.find(:all,
-                                    :joins => "INNER JOIN location l ON l.location_id = patient_program.location_id
-                                               INNER JOIN program p ON p.program_id = patient_program.program_id",
-                                    :select => "p.name program_name ,l.name location_name,patient_program.date_completed date_completed",
-                                    :conditions =>["voided = 0 AND patient_id = ? AND date_completed IS NULL",params[:patient_id]]
-                                    ).map{|pat_program|
+    program_names = PatientProgram.select("p.name program_name ,l.name location_name,patient_program.date_completed date_completed"
+                                        ).where(["voided = 0 AND patient_id = ? AND date_completed IS NULL",params[:patient_id]]).joins("INNER JOIN location l ON l.location_id = patient_program.location_id
+                                               INNER JOIN program p ON p.program_id = patient_program.program_id").map{|pat_program|
                                       [pat_program.program_name,pat_program.location_name] if pat_program.date_completed.blank?
                                     }
     @enrolled_program_names = program_names.to_json                                
@@ -17,7 +14,7 @@ class GenericProgramsController < ApplicationController
   end
 
   def create
-    active_programs = PatientProgram.find(:all,:conditions =>["voided = 0 AND patient_id = ? AND location_id = ? AND program_id = ?",
+    active_programs = PatientProgram.where(["voided = 0 AND patient_id = ? AND location_id = ? AND program_id = ?",
                                     @patient.id,params[:location_id],params[:program_id]])
     invalid_date = false
     initial_date = params[:initial_date].to_date
@@ -69,20 +66,20 @@ class GenericProgramsController < ApplicationController
     else
         search = params[:q] || ''
         location_tag_id = LocationTag.find_by_name("#{params[:transfer_type]}").id
-        location_ids = LocationTagMap.find(:all,:conditions => ["location_tag_id = (?)",location_tag_id]).map{|e|e.location_id}
-        @locations = Location.find(:all, :conditions=>["location.retired = 0 AND location_id IN (?) AND name LIKE ? AND name != ''", location_ids, "#{search}%"])
+        location_ids = LocationTagMap.where(["location_tag_id = (?)",location_tag_id]).map{|e|e.location_id}
+        @locations = Location.where(["location.retired = 0 AND location_id IN (?) AND name LIKE ? AND name != ''", location_ids, "#{search}%"])
     end
     @names = @locations.map do | location | 
       next if generic_locations.include?(location.name)
       "<li value='#{location.location_id}'>#{location.name}</li>" 
     end
-    render :text => @names.join('')
+    render plain: @names.join('').html_safe
   end
   
   def workflows
-    @workflows = ProgramWorkflow.all(:conditions => ['program_id = ?', params[:program]], :include => :concept)
+    @workflows = ProgramWorkflow.where(['program_id = ?', params[:program]]).includes(:concept)
     @names = @workflows.map{|workflow| "<li value='#{workflow.id}'>#{workflow.concept.fullname}</li>" }
-    render :text => @names.join('')
+    render plain: @names.join('').html_safe
   end
   
   def states
@@ -97,7 +94,7 @@ class GenericProgramsController < ApplicationController
       next if name.blank? 
       "<li value='#{state.id}'>#{name}</li>" unless name == params[:current_state]
     }
-    render :text => @names.join('')  
+    render plain: @names.join('').html_safe
   end
 
   def update
@@ -200,7 +197,7 @@ class GenericProgramsController < ApplicationController
          unless params[:location]
             redirect_to :controller => :patients, :action => :programs_dashboard, :patient_id => params[:patient_id]
          else
-            render :text => "import suceeded" and return
+            render plain: "import suceeded" and return
          end
         
       else
@@ -208,7 +205,7 @@ class GenericProgramsController < ApplicationController
         unless params[:location]
           redirect_to :controller => :patients, :action => :programs_dashboard, :patient_id => params[:patient_id],:error => "Unable to update state"
         else
-            render :text => "import suceeded" and return
+            render plain: "import suceeded" and return
         end
       end
     else
@@ -217,7 +214,7 @@ class GenericProgramsController < ApplicationController
         unless params[:location]
             flash[:error] = "The patient has already completed this program!"
        else
-          render :text => "import suceeded" and return
+          render plain: "import suceeded" and return
        end   
       end
       @patient = patient_program.patient
@@ -273,8 +270,9 @@ class GenericProgramsController < ApplicationController
 
   def most_common_locations_excluding_wards(search)
   location_tag_id = LocationTag.find_by_name("ward").id
-  ward_location_ids = LocationTagMap.find(:all,:conditions => ["location_tag_id = (?)",location_tag_id]).map{|e|e.location_id}
-  locations = Location.find(:all, :limit => 10, :conditions=>["location.retired = 0 AND location_id NOT IN (?) AND name LIKE ? AND name != ''", ward_location_ids, "#{search}%"])
+  ward_location_ids = LocationTagMap.where(["location_tag_id = (?)",location_tag_id]).map{|e|e.location_id}
+  locations = Location.where(["location.retired = 0 AND location_id NOT IN (?) AND name LIKE ? AND name != ''",
+                              ward_location_ids, "#{search}%"]).limit(10)
   locations.delete_if{|location|location.name.match(/^WARD/i)}
   return locations
   end

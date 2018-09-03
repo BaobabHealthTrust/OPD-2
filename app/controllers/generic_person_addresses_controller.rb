@@ -17,7 +17,7 @@ class GenericPersonAddressesController < ApplicationController
 
   def search(field_name, search_string)
     @names = PersonAddress.find_most_common(field_name, search_string).collect{|person_name| person_name.send(field_name)}
-    render :text => "<li>" + @names.join("</li><li>") + "</li>"
+    render plain: ("<li>" + @names.join("</li><li>") + "</li>").html_safe
     #redirect_to :action => :new, :address2 => params[:address2]
   end
   
