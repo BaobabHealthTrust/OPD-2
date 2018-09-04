@@ -6,7 +6,7 @@ module MedicationService
 
 	def self.arv_drugs
 		arv_concept       = ConceptName.find_by_name("ANTIRETROVIRAL DRUGS").concept_id
-		arv_drug_concepts = ConceptSet.all(:conditions => ['concept_set = ?', arv_concept])
+		arv_drug_concepts = ConceptSet.where(['concept_set = ?', arv_concept])
 		arv_drug_concepts
 	end
 
@@ -16,7 +16,7 @@ module MedicationService
 
 	def self.tb_drugs
 		tb_medication_concept       = ConceptName.find_by_name("Tuberculosis treatment drugs").concept_id
-		tb_medication_drug_concepts = ConceptSet.all(:conditions => ['concept_set = ?', tb_medication_concept])
+		tb_medication_drug_concepts = ConceptSet.where(['concept_set = ?', tb_medication_concept])
 		tb_medication_drug_concepts
 	end
 	
@@ -26,16 +26,15 @@ module MedicationService
 	
 	def self.diabetes_drugs
 		diabetes_medication_concept       = ConceptName.find_by_name("DIABETES MEDICATION").concept_id
-		diabetes_medication_drug_concepts = ConceptSet.all(:conditions => ['concept_set = ?', diabetes_medication_concept])
+		diabetes_medication_drug_concepts = ConceptSet.where(['concept_set = ?', diabetes_medication_concept])
 		diabetes_medication_drug_concepts
 	end
 
   # Generate a given list of Regimen+s for the given +Patient+ <tt>weight</tt>
   # into select options. 
 	def self.regimen_options(weight, program)
-		regimens = Regimen.find(	:all,
-      :order => 'regimen_index',
-      :conditions => ['? >= min_weight AND ? < max_weight AND program_id = ?', weight, weight, program.program_id])
+		regimens = Regimen.where9(['? >= min_weight AND ? < max_weight AND program_id = ?',
+                      weight, weight, program.program_id]).order('regimen_index')
 
 		options = regimens.map { |r|
 			concept_name = (r.concept.concept_names.typed("SHORT").first ||	r.concept.concept_names.typed("FULLY_SPECIFIED").first).name
@@ -94,7 +93,7 @@ module MedicationService
   
   def self.fully_specified_frequencies
     concept_id = ConceptName.find_by_name('DRUG FREQUENCY CODED').concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     frequencies = []
     options = set.each{ | item |
       next if item.concept.blank?
@@ -110,8 +109,8 @@ module MedicationService
   end
 	
   def self.concept_set(concept_name)
-    concept_id = ConceptName.find(:first, :conditions =>["name = ?", concept_name]).concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    concept_id = ConceptName.where(["name = ?", concept_name]).first.concept_id
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.concept_id] }
     return options
   end

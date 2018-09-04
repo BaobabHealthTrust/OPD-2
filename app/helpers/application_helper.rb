@@ -82,7 +82,11 @@ module ApplicationHelper
 
   def ask_standard_art_side_effects
     get_global_property_value("art_visit.standard_art_side_effects").to_s == "true" rescue false
-  end  
+  end
+
+  def use_barcode_on_login?
+    get_global_property_value('use.barcode.on.login').to_s.upcase == "TRUE" rescue false
+  end
 
   def show_lab_results
     get_global_property_value('show.lab.results').to_s == "true" rescue false
@@ -126,11 +130,12 @@ module ApplicationHelper
   def version
     #"Bart Version: #{BART_VERSION}#{' ' + BART_SETTINGS['installation'] if BART_SETTINGS}, #{File.ctime(File.join(RAILS_ROOT, 'config', 'environment.rb')).strftime('%d-%b-%Y')}"
     style = "style='background-color:red;'" unless session[:datetime].blank?
-    "OPD Version: #{OPD_VERSION} - <span #{style}>#{(session[:datetime].to_date rescue Date.today).strftime('%A, %d-%b-%Y')}</span>"
+    ("OPD Version: #{OPD_VERSION} - <span #{style}>#{(session[:datetime].to_date rescue Date.today).strftime('%A, %d-%b-%Y')}</span>").html_safe
   end
   
   def welcome_message
-    "Muli bwanji, enter your user information or scan your id card. <span style='font-size:0.6em;float:right'>(#{version})</span>"  
+    action = use_barcode_on_login? ? "scan your id card to login" : "enter your user information to login"
+    "Muli bwanji, #{action}. <span style='font-size:0.6em;float:right'>(#{version})</span>"
   end
   
   def show_identifiers(location_id, patient)

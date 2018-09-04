@@ -1310,7 +1310,7 @@ class GenericEncountersController < ApplicationController
 
   def save_ids_complaints
     @patient_id = params['patient_id']
-    encounter = create_idsr_encounters ('PRESENTING COMPLAINTS', @patient_id)
+    encounter = create_idsr_encounters('PRESENTING COMPLAINTS', @patient_id)
 
    # complaints = ['Bites','Burns','Abscess']
     complaints = ConceptName.complaintsconcepts.map(&:name)

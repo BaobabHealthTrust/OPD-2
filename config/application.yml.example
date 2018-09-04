@@ -17,6 +17,7 @@ production:
  logo: mw.gif
  application.name: OPD
  create.from.dde.server: false
+ use.barcode.on.login: false
  zone: zone_c_west
  malaria_ip_addresses: localhost:4000, localhost:5000
  simple_application_dashboard: true
@@ -91,6 +92,7 @@ development:
  application.name: OPD
  create.from.dde.server: false
  zone: zone_c_west
+ use.barcode.on.login: false
  malaria_ip_addresses: localhost:4000, localhost:5000
  simple_application_dashboard: true
  anti_malaria_drugs:
