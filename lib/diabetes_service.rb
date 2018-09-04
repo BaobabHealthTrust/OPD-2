@@ -104,7 +104,7 @@ end
     @patient = Patient.find(patient_id || session[:patient_id]) rescue nil
     
     @person = @patient.person
-    @encounters = @patient.encounters.find_all_by_encounter_type(EncounterType.find_by_name('DIABETES TEST').id)
+    @encounters = @patient.encounters.where(encounter_type: EncounterType.find_by_name('DIABETES TEST').id)
     @observations = @encounters.map(&:observations).flatten
     @obs_datetimes = @observations.map { |each|each.obs_datetime.strftime("%d-%b-%Y")}.uniq
     @address = @person.addresses.last
@@ -115,11 +115,8 @@ end
     @creatinine_obs = []
     creatinine_id = Concept.find_by_name('CREATININE').id
     max_creatinine_date = nil
-    @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['concept_id != (?) AND encounter_type = ? AND concept_id = ?',
-        workstation_location_id, diabetes_test_id, creatinine_id],
-      :order => 'obs_datetime DESC').each{|o| 
+    @patient.person.observations.where(['concept_id != (?) AND encounter_type = ? AND concept_id = ?',
+        workstation_location_id, diabetes_test_id, creatinine_id]).joins(:encounter).order('obs_datetime DESC').each{|o|
       @creatinine_obs << "#{o.to_s_formatted} #{("(" + 
       o.obs_datetime.strftime("%d-%b-%Y") + ")") if !creatinine[o.obs_datetime.strftime("%d-%b-%Y")]}; "
       
@@ -134,11 +131,8 @@ end
     @urine_protein_obs = []
     urine_protein_id = Concept.find_by_name('URINE PROTEIN').id
     max_urine_protein_date = nil
-    @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['concept_id != (?) AND encounter_type = ? AND concept_id = ?',
-        workstation_location_id, diabetes_test_id, urine_protein_id],
-      :order => 'obs_datetime DESC').each{|o| 
+    @patient.person.observations.where(['concept_id != (?) AND encounter_type = ? AND concept_id = ?',
+        workstation_location_id, diabetes_test_id, urine_protein_id]).joins(:encounter).order('obs_datetime DESC').each{|o|
       @urine_protein_obs << "#{o.to_s_formatted} #{("(" + 
       o.obs_datetime.strftime("%d-%b-%Y") + ")") if !urine[o.obs_datetime.strftime("%d-%b-%Y")]}; "
       
@@ -152,16 +146,11 @@ end
     foot = {}
     @foot_check_obs = []
     max_foot_check_date = nil
-    foot_check_encounters = @patient.encounters.find(:all,
-      :joins => :observations,
-      :conditions => ['concept_id IN (?)',
-        ConceptName.find_all_by_name(['RIGHT FOOT/LEG',
-            'LEFT FOOT/LEG']).map(&:concept_id)])
-    @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['concept_id != (?) AND encounter_type = ? AND encounter.encounter_id IN (?)',
-        workstation_location_id, diabetes_test_id, foot_check_encounters.map(&:id)],
-      :order => 'obs_datetime DESC').each{|o| 
+    foot_check_encounters = @patient.encounters.where(['concept_id IN (?)',
+        ConceptName.where(["name IN (?)",['RIGHT FOOT/LEG',
+            'LEFT FOOT/LEG']]).map(&:concept_id)]).joins(:observations)
+    @patient.person.observations.where(['concept_id != (?) AND encounter_type = ? AND encounter.encounter_id IN (?)',
+        workstation_location_id, diabetes_test_id, foot_check_encounters.map(&:id)]).joins(:encounter).order('obs_datetime DESC').each{|o|
       @foot_check_obs << "#{o.to_s_formatted} #{("(" + 
       o.obs_datetime.strftime("%d-%b-%Y") + ")") if !foot[o.obs_datetime.strftime("%d-%b-%Y")]}; "
       
@@ -175,16 +164,12 @@ end
     visual = {}
     @visual_acuity_obs = []
     max_visual_acuity_date = nil
-    visual_acuity_encounters = @patient.encounters.find(:all,
-      :joins => :observations,
-      :conditions => ['concept_id IN (?)',
-        ConceptName.find_all_by_name(['LEFT EYE VISUAL ACUITY',
-            'RIGHT EYE VISUAL ACUITY']).map(&:concept_id)])
-    @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['concept_id != (?) AND encounter_type = ? AND encounter.encounter_id IN (?)',
-        workstation_location_id, diabetes_test_id, visual_acuity_encounters.map(&:id)],
-      :order => 'obs_datetime DESC').each{|o| 
+    visual_acuity_encounters = @patient.encounters.where(['concept_id IN (?)',
+        ConceptName.where(["name IN (?)",['LEFT EYE VISUAL ACUITY',
+            'RIGHT EYE VISUAL ACUITY']]).map(&:concept_id)]).joins(:observations)
+    @patient.person.observations.where(['concept_id != (?) AND encounter_type = ? AND encounter.encounter_id IN (?)',
+        workstation_location_id, diabetes_test_id, visual_acuity_encounters.map(&:id)]).joins(
+        :encounter).order('obs_datetime DESC').each{|o|
       @visual_acuity_obs << "#{o.to_s_formatted} #{("(" + 
       o.obs_datetime.strftime("%d-%b-%Y") + ")") if !visual[o.obs_datetime.strftime("%d-%b-%Y")]}; "
       
@@ -198,16 +183,11 @@ end
     fundo = {}
     @fundoscopy_obs = []
     max_fundoscopy_date = nil
-    fundoscopy_encounters = @patient.encounters.find(:all,
-      :joins => :observations,
-      :conditions => ['concept_id IN (?)',
-        ConceptName.find_all_by_name(['LEFT EYE FUNDOSCOPY',
-            'RIGHT EYE FUNDOSCOPY']).map(&:concept_id)])
-     @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['concept_id != (?) AND encounter_type = ? AND encounter.encounter_id IN (?)',
-        workstation_location_id, diabetes_test_id, fundoscopy_encounters.map(&:id)],
-      :order => 'obs_datetime DESC').each{|o| 
+    fundoscopy_encounters = @patient.encounters.where(['concept_id IN (?)',
+        ConceptName.where(["name IN (?)",['LEFT EYE FUNDOSCOPY',
+            'RIGHT EYE FUNDOSCOPY']]).map(&:concept_id)]).joins(:observations)
+     @patient.person.observations.where(['concept_id != (?) AND encounter_type = ? AND encounter.encounter_id IN (?)',
+        workstation_location_id, diabetes_test_id, fundoscopy_encounters.map(&:id)]).joins(:encounter).order('obs_datetime DESC').each{|o|
       @fundoscopy_obs << "#{o.to_s_formatted} #{("(" + 
       o.obs_datetime.strftime("%d-%b-%Y") + ")") if !fundo[o.obs_datetime.strftime("%d-%b-%Y")]}; "
       
@@ -222,11 +202,8 @@ end
     @urea_obs = []
     max_urea_date = nil
     urea_id = Concept.find_by_name('UREA').id
-    @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['encounter_type = ? AND concept_id = ?',
-        diabetes_test_id, urea_id],
-      :order => 'obs_datetime DESC').each{|o| 
+    @patient.person.observations.where(['encounter_type = ? AND concept_id = ?',
+        diabetes_test_id, urea_id]).joins(:encounter).order('obs_datetime DESC').each{|o|
       @urea_obs << "#{o.to_s_formatted} #{("(" + 
       o.obs_datetime.strftime("%d-%b-%Y") + ")") if !urea[o.obs_datetime.strftime("%d-%b-%Y")]}; "
       
@@ -241,11 +218,8 @@ end
     @macrovascular = []
     max_macrovascular_date = nil
     macrovascular_id = Concept.find_by_name('MACROVASCULAR').id
-    @patient.person.observations.find(:all,
-      :joins => :encounter,
-      :conditions => ['encounter_type = ? AND concept_id = ?',
-        diabetes_test_id, macrovascular_id],
-      :order => 'obs_datetime DESC').each{|o| 
+    @patient.person.observations.where(['encounter_type = ? AND concept_id = ?',
+        diabetes_test_id, macrovascular_id]).joins(:encounter).order('obs_datetime DESC').each{|o|
       @macrovascular << "#{o.to_s_formatted.gsub(/Left/, "L.").gsub(/Visual\sAcuity/, "V.A.").gsub(/Right/, "R.").gsub(/Pulses\sPresent/, "Pulses Yes")} #{("(" + 
       o.obs_datetime.strftime("%d-%b-%Y") + ")") if !macrovascular[o.obs_datetime.strftime("%d-%b-%Y")]}; "
       
@@ -281,7 +255,7 @@ end
     @patient = Patient.find(patient_id || session[:patient_id]) rescue nil
 
     @person = @patient.person
-    @encounters = @patient.encounters.find_all_by_encounter_type(EncounterType.find_by_name('TREATMENT').id)
+    @encounters = @patient.encounters.where(encounter_type: EncounterType.find_by_name('TREATMENT').id)
     @observations = @encounters.map(&:observations).flatten
     @obs_datetimes = @observations.map { |each|each.obs_datetime.strftime("%d-%b-%Y")}.uniq
     
@@ -316,7 +290,7 @@ end
   def self.diabetes_number(patient)
     identifier_type = PatientIdentifierType.find_by_name("Diabetes Number").id
     test_condtion   = ["voided = 0 AND identifier_type = ? AND patient_id = ?", identifier_type, patient.id]
-    diabetes_number = PatientIdentifier.find(:first,:conditions => test_condtion).identifier rescue "Unknown"
+    diabetes_number = PatientIdentifier.where(test_condtion).first.identifier rescue "Unknown"
 
     return diabetes_number
   end
@@ -348,7 +322,7 @@ end
   def self.ds_number(patient)
     identifier_type = PatientIdentifierType.find_by_name("DS Number").id
     test_condtion   = ["voided = 0 AND identifier_type = ? AND patient_id = ?", identifier_type, patient.id]
-    ds_number = PatientIdentifier.find(:first,:conditions => test_condtion).identifier rescue "Unknown"
+    ds_number = PatientIdentifier.where(test_condtion).first.identifier rescue "Unknown"
 
     return ds_number
   end
@@ -400,12 +374,14 @@ end
       preferred_concept_name_id = Concept.find_by_name(drug_frequency).concept_id
       preferred_dmht_tag_id = ConceptNameTag.find_by_tag("preferred_dmht").concept_name_tag_id
 
-      drug_frequency = ConceptName.find(:first, :select => "concept_name.name",
-        :joins => "INNER JOIN concept_answer ON concept_name.concept_id = concept_answer.answer_concept
+      drug_frequency = ConceptName.select("concept_name.name").where(["concept_answer.concept_id = ? AND
+                                  concept_name.concept_id = ? AND voided = 0
+                                  AND cnmp.concept_name_tag_id = ?", concept_name_id,
+                                                                      preferred_concept_name_id,
+                                                                      preferred_dmht_tag_id]).joins(
+                     "INNER JOIN concept_answer ON concept_name.concept_id = concept_answer.answer_concept
                                 INNER JOIN concept_name_tag_map cnmp
-                                  ON  cnmp.concept_name_id = concept_name.concept_name_id",
-        :conditions => ["concept_answer.concept_id = ? AND concept_name.concept_id = ? AND voided = 0
-                                  AND cnmp.concept_name_tag_id = ?", concept_name_id, preferred_concept_name_id, preferred_dmht_tag_id])
+                                  ON  cnmp.concept_name_id = concept_name.concept_name_id")
 
       drugs.each do |drug|
 
@@ -432,13 +408,10 @@ end
   end
   
   def self.matching_drugs(diagnosis_id, name)
-    Drug.find(:all,:select => "concept.concept_id AS concept_id, concept_name.name AS name,
-        drug.dose_strength AS strength, drug.name AS formulation",
-      :joins => "INNER JOIN concept       ON drug.concept_id = concept.concept_id
+    Drug.select("concept.concept_id AS concept_id, concept_name.name AS name, drug.dose_strength AS strength, drug.name AS formulation"
+    ).where(["concept_set.concept_set = ? AND drug.name LIKE ?", diagnosis_id, name],).joins("INNER JOIN concept       ON drug.concept_id = concept.concept_id
                INNER JOIN concept_set   ON concept.concept_id = concept_set.concept_id
-               INNER JOIN concept_name  ON concept_name.concept_id = concept.concept_id",
-      :conditions => ["concept_set.concept_set = ? AND drug.name LIKE ?", diagnosis_id, name],
-      :group => "concept.concept_id, drug.name, drug.dose_strength")
+               INNER JOIN concept_name  ON concept_name.concept_id = concept.concept_id").group("concept.concept_id, drug.name, drug.dose_strength")
   end
 
   def self.dc_number_prefix

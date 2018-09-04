@@ -626,11 +626,11 @@ class GenericPatientsController < ApplicationController
       @programs = @patient.patient_programs.all
     else
       #["name !=","HIV PROGRAM"]
-      @programs = PatientProgram.all(:conditions => ["patient_id = ? AND program_id != ?",@patient.id, hiv_program])
+      @programs = PatientProgram.where(["patient_id = ? AND program_id != ?",@patient.id, hiv_program])
     end
     @alerts = alerts(@patient, session_date) rescue nil
     # This code is pretty hacky at the moment
-    @restricted = ProgramLocationRestriction.all(:conditions => {:location_id => Location.current_health_center.id })
+    @restricted = ProgramLocationRestriction.where({:location_id => Location.current_health_center.id })
     @restricted.each do |restriction|
       @encounters = restriction.filter_encounters(@encounters)
       @prescriptions = restriction.filter_orders(@prescriptions)
@@ -654,7 +654,8 @@ class GenericPatientsController < ApplicationController
     session_date = session[:datetime].to_date rescue Date.today
   	start_date = session_date.strftime('%Y-%m-%d 00:00:00')
   	end_date = session_date.strftime('%Y-%m-%d 23:59:59')
-    @encounters = Encounter.find(:all, 	:conditions => [" patient_id = ? AND encounter_datetime >= ? AND encounter_datetime <= ?", @patient.id, start_date, end_date])
+    @encounters = Encounter.where([" patient_id = ? AND encounter_datetime >= ? AND encounter_datetime <= ?",
+                                   @patient.id, start_date, end_date])
 
     if ! allowed_hiv_viewer
       @encounters = remove_art_encounters(@encounters, 'encounter')
@@ -673,11 +674,11 @@ class GenericPatientsController < ApplicationController
       @programs = @patient.patient_programs.all
     else
       #["name !=","HIV PROGRAM"]
-      @programs = PatientProgram.all(:conditions => ["patient_id = ? AND program_id != ?",@patient.id, hiv_program])
+      @programs = PatientProgram.where(["patient_id = ? AND program_id != ?",@patient.id, hiv_program])
     end
     @alerts = alerts(@patient, session_date) rescue nil
     # This code is pretty hacky at the moment
-    @restricted = ProgramLocationRestriction.all(:conditions => {:location_id => Location.current_health_center.id })
+    @restricted = ProgramLocationRestriction.where({:location_id => Location.current_health_center.id })
     @restricted.each do |restriction|
       @encounters = restriction.filter_encounters(@encounters)
       @prescriptions = restriction.filter_orders(@prescriptions)
@@ -688,10 +689,7 @@ class GenericPatientsController < ApplicationController
   end
 
   def get_previous_encounters(patient_id)
-    previous_encounters = Encounter.find(:all,
-      :conditions => ["encounter.voided = ? and patient_id = ?", 0, patient_id],
-      :include => [:observations]
-    )
+    previous_encounters = Encounter.where(["encounter.voided = ? and patient_id = ?", 0, patient_id]).includes(:observations)
 
     return previous_encounters
   end
@@ -2286,7 +2284,7 @@ class GenericPatientsController < ApplicationController
 
     void_encounter if (params[:void] && params[:void] == 'true')
     #@encounters   = @patient.encounters.current.active.find(:all)
-    @encounters   = @patient.encounters.find(:all, :conditions => ['DATE(encounter_datetime) = ?',session_date.to_date])
+    @encounters   = @patient.encounters.where(['DATE(encounter_datetime) = ?',session_date.to_date])
     excluded_encounters = ["Registration", "Diabetes history","Complications", #"Diabetes test",
       "General health", "Diabetes treatments", "Diabetes admissions","Hospital admissions",
       "Hypertension management", "Past diabetes medical history","Update HIV status"]
@@ -2296,12 +2294,13 @@ class GenericPatientsController < ApplicationController
     @observations = Observation.where(["person_id= ? AND obs_datetime < ? AND value_coded != ?",
                                        @patient.patient_id, Time.now.to_date, ignored_concept_id]).order('obs_datetime DESC').limit(50)
 
-    @observations.delete_if { |obs| obs.value_text.downcase == "no" rescue nil }
+
+    @observations = @observations.to_a.delete_if{ |obs| obs.value_text.downcase == "no" rescue nil }
 
     # delete encounters that are not required for display on patient's summary
     @lab_results_ids = [Concept.find_by_name("Urea").id, Concept.find_by_name("Urine Protein").id, Concept.find_by_name("Creatinine").id]
     @encounters.map{ |encounter| (encounter.name == "DIABETES TEST" && encounter.observations.delete_if{|obs| !(@lab_results_ids.include? obs.concept.id)})} rescue nil
-    @encounters.delete_if{|encounter|(encounter.observations == [])}
+    @encounters = @encounters.to_a.delete_if{|encounter|(encounter.observations == [])}
 
     @obs_datetimes = @observations.map { |each|each.obs_datetime.strftime("%d-%b-%Y")}.uniq
 
