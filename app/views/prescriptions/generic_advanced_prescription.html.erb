@@ -1,0 +1,286 @@
+<link href="/touchscreentoolkit/lib/stylesheets/drug-style.css" type="text/css" rel="stylesheet" />
+<link href="/touchscreentoolkit/lib/stylesheets/dispense.css" type="text/css" rel="stylesheet" />
+<%= javascript_include_tag "jquery" %>
+<% 
+#url = request.original_url.gsub(/http\:\/\//,"")
+
+#url = url[url.index("/"), url.length - url.index("/")]
+%>
+<script type="text/javascript" language="javascript">
+  
+  // tt_cancel_show = "<%= '/patients/treatment_dashboard/#{@patient.id}' %>";
+  // tt_cancel_destination = '<%= "/patients/treatment_dashboard/#{@patient.id}" %>';
+  tt_cancel_destination = '<%= "/patients/show/#{@patient.id}" %>';
+
+  var generic_drugs = <%= (@preferred_drugs + @generics.sort).uniq.to_json.html_safe %>;
+  var generics = <%= (@preferred_drugs + @generics.sort).uniq.to_json.html_safe %>;
+  var frequencies = <%= @frequencies.to_json.html_safe %>;
+  var drugslist = <%= @formulations.to_json.html_safe %>;
+  var diagnosisList = <%= @diagnosis.to_json.html_safe %>;
+  var patient_id = <%= params[:patient_id] rescue "" %>;
+  var search_path = "/prescriptions/load_frequencies_and_dosages";
+  var malariaTestResult = '<%= @malaria_test_result.html_safe %>'
+  function updatePreferredDrugsTextColor(){
+<% @preferred_drugs_concept_ids.each do |concept_id| %>
+      //jQuery("li[concept_id='<%=  concept_id %>']").css("cflor", 'green');
+<% end %>
+  }
+
+  window.setInterval("updatePreferredDrugsTextColor();", 50);
+
+  var antiMalariaDrugsHash = <%= @antimalarial_drugs_hash.to_json.html_safe %>;
+
+  function hidePopup(){
+    document.getElementById("my-popup-div").style.display = 'none';
+    document.getElementById("cover").style.display = 'none';
+  };
+
+  function showMalariaDrugsConfirmationPopup(){
+    document.getElementById("my-popup-div").style.display = 'inline';
+    document.getElementById("cover").style.display = 'inline';
+  }
+</script>
+
+<% if @use_col_interface == "true" %>
+  <script language="javascript" type="text/javascript" src="/javascripts/multiColumnTreatment.js" defer></script>
+  <script language="javascript" type="text/javascript" src="/javascripts/popup.js" defer></script>
+<%else%>
+
+  <script language="javascript" type="text/javascript" src="/touchscreentoolkit/lib/javascripts/prescriber.js" defer></script>
+
+<%end%>
+
+<style type="text/css">
+  #space { display:inline; font-size:1.2em; }
+  #helpText0 { width:680px}
+
+  #alertBox {
+    position: absolute;
+    top: 35px;
+    left: 420px;
+    min-height: 50px;
+    min-width: 560px;
+    background-color: #87d469;
+    z-index: 1000;
+    border-radius: 20px;
+    text-align: center;
+    border: 2px outset #87d469;    
+    font-size: 2em;
+    vertical-align: middle;
+    padding-top: 10px;
+    opacity: 0.9;
+    display: none;
+  }
+  .keyboard{
+    display: none !important;	
+  }
+  div {
+    -moz-user-select: none;
+  }
+
+  /* popup */
+  .popup-btn {
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 16px;
+    font-weight: bolder;
+    line-height: 1.82857;
+    bottom: 39px;
+    padding: 6px 56px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    background-color: #2e6da4;
+    border-color: #2e6da4;
+    color: #fff;
+    float: right;
+    width: 30px;
+  }
+
+
+  #my-popup-div {
+    display: none;
+    background-color: #F4F4F4;
+    border: 2px solid #E0E0E0;
+    border-radius: 15px;
+    height: 172px;
+    padding: 5px;
+    position: absolute;
+    top: 20px;
+    width: 560px;
+    margin-left: 430px;
+    z-index: 991;
+    border: 1px solid;
+  }
+
+  #my-popup-header{
+    border-bottom: 2px solid #7D9EC0;
+    margin-left: -5px;
+    width: 101.5%;
+    background-color: #FFFFFF;
+    margin-top: -5px;
+    padding-top: 5px;
+    border-radius: 15px 15px 0 0;
+    font-size: 14pt;
+    font-weight: bolder;
+  }
+
+  #cover{
+    display: none;
+    position: absolute;
+    background-color: black;
+    width: 100%;
+    height: 102%;
+    left: 0%;
+    top: 0%;
+    z-index: 990;
+    opacity: 0.65;
+  }
+
+  #popup-div #yes, #popup-div #no {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+  }
+  /*popup*/
+</style>
+
+<div id="alertBox">  
+  Hello World!
+</div>
+
+<form id='prescription' action="/prescriptions/create_advanced_prescription" method='post'>
+
+  <%= hidden_field_tag "encounter[encounter_type_name]", "TREATMENT" %>
+  <%= hidden_field_tag "encounter[patient_id]", @patient.id %>
+  <%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
+  <%= hidden_field_tag "encounter[provider_id]", current_user.user_id %>
+  <%if get_global_property_value("malaria.enabled.facility")%>
+    <input type='text' name='drugs' tt_onLoad='generateGenerics(<%= @patient.id %>);addAntiMalarialDrugsButton();'
+    tt_onUnLoad='removeGenerics()' tt_pageStyleClass='NoControls'
+    optional />
+   <%else%>
+      <input type='text' name='drugs' tt_onLoad='generateGenerics(<%= @patient.id %>);'
+       tt_onUnLoad='removeGenerics()' tt_pageStyleClass='NoControls'
+       optional />
+
+   <%end%>
+  <input type="hidden" value="<%= @patient.id %>" id="patient_id" name="patient_id" />
+
+
+  <%= submit_tag "Finish" %>
+
+</form>
+
+
+<div id="my-popup-div">
+  <div id="my-popup-header">
+    <center>Confirm</center>
+  </div><br />
+  <div>
+
+    <span style="font-size: 16pt;">
+      <center>
+        This patient has no malaria diagnosis. Are you sure you want to prescribe antimalarial drugs?
+      </center>
+    </span>
+    <div style="padding-top: 65px;">
+      <span id="yes" onclick="hidePopup();antiMalarialPopup();" class="popup-btn" style="position: relative;">Yes</span>
+      <span id="no" onclick="hidePopup();" class="popup-btn" style=" position: relative; right: 20px;">No</span>
+    </div>
+  </div>
+</div>
+
+<div id="cover">
+
+</div>
+
+
+
+<div style="z-index:11;bottom:28px; height: 64px; width: 435px; left: 230px;
+     right: -66px; position: absolute;">
+  <!--button id="viewSelectedOnlyButton" class="button navButton blue" style="min-width:350px;"
+          onclick="if(this.innerHTML=='<span>Show Selected Drugs Only</span>'){
+            this.innerHTML = '<span>Show All Drugs</span>';
+            showSelectedDrugsOnly();
+          } else {
+            this.innerHTML = '<span>Show Selected Drugs Only</span>';
+            $('inputTxt').value = '';
+            searchDrug();
+          }">
+    <span>
+      Show Selected Drugs Only
+    </span>
+  </button-->
+</div>
+<script type="text/javascript" language="javascript">
+  function checkMissingData(){
+    data = []
+    if (Object.keys(selectedGenerics).length == 0){
+      showMessage("Complete the missing fields to continue")
+    }
+    else
+    {
+      for(var diagnosis in selectedGenerics){
+        for(var generic in selectedGenerics[diagnosis]){
+          drug = generic
+          dosage = selectedGenerics[diagnosis][generic]["dosage"];
+          frequency = selectedGenerics[diagnosis][generic]["frequency"];
+          duration = selectedGenerics[diagnosis][generic]["duration"];
+          if (oneIsEmpty(drug, dosage, frequency, duration)){
+            data.push(drug)
+          }
+        }
+      }
+      if (data.length > 0){
+        showMessage("Complete the missing fields to continue")
+      }
+      else{
+        removeGenerics();
+        document.forms[0].submit();
+      }
+    }
+  }
+  function oneIsEmpty(drug, dosage, frequency, duration){
+    return (drug === null || dosage === null || 
+      0===dosage.length || frequency === null || 0===frequency.length ||
+      duration === null || 0===duration.length);
+  }
+  function validateInput(){
+    finishButton = document.getElementById('nextButton');
+    finishButton.setAttribute("onmousedown", "checkMissingData();")
+  }
+
+  function addAntiMalarialDrugsButton(){
+<% if @use_col_interface == "true" %>
+      buttonsDiv = document.getElementsByClassName("buttonsDiv")[0];
+      button = document.createElement("button");
+      button.className = "button blue navButton";
+      button.id = "antiMalarialButton";
+      button.innerHTML = '<span>Predefined Antimalarial Drugs</span>';
+    
+      if (malariaTestResult.match(/POSITIVE/i)){
+        button.onmousedown = function(){
+          antiMalarialPopup();
+        }
+      }else{
+        button.onmousedown = function(){
+          showMalariaDrugsConfirmationPopup();
+        }
+      }
+
+      buttonsDiv.appendChild(button);
+<% end %>
+  }
+
+<% if @use_col_interface == "true" %>
+    window.setTimeout("validateInput();", 200);
+    /*
+     *<button onmousedown="clearInput()" class="button blue navButton" id="clearButton"><span>Clear</span></button>
+     **/
+
+<% end %>
+</script>

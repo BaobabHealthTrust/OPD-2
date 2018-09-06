@@ -74,7 +74,7 @@ class GenericPrescriptionsController < ApplicationController
     unless params[:location]
       redirect_to (params[:auto] == '1' ? "/prescriptions/auto?patient_id=#{@patient.id}" : "/patients/treatment_dashboard/#{@patient.id}")
     else
-      render :text => 'import success' and return
+      render plain: 'import success' and return
     end
     
   end
@@ -98,77 +98,67 @@ class GenericPrescriptionsController < ApplicationController
   def generics
     search_string = (params[:search_string] || '').upcase
     filter_list = params[:filter_list].split(/, */) rescue []    
-    @drug_concepts = ConceptName.find(:all, 
-      :select => "concept_name.name", 
-      :joins => "INNER JOIN drug ON drug.concept_id = concept_name.concept_id AND drug.retired = 0", 
-      :conditions => ["concept_name.name LIKE ?", '%' + search_string + '%'],:group => 'drug.concept_id')
-    render :text => "<li>" + @drug_concepts.map{|drug_concept| drug_concept.name }.uniq.join("</li><li>") + "</li>"
+    @drug_concepts = ConceptName.select("concept_name.name").where(["concept_name.name LIKE ?", '%' + search_string + '%']).joins(
+        "INNER JOIN drug ON drug.concept_id = concept_name.concept_id AND drug.retired = 0"
+    ).group('drug.concept_id')
+    render plain: ("<li>" + @drug_concepts.map{|drug_concept| drug_concept.name }.uniq.join("</li><li>") + "</li>").html_safe
   end
   
   # Look up all of the matching drugs for the given generic drugs
   def formulations
     @generic = (params[:generic] || '')
     @concept_ids = ConceptName.find_all_by_name(@generic).map{|c| c.concept_id}
-    render :text => "" and return if @concept_ids.blank?
+    render plain: "" and return if @concept_ids.blank?
     search_string = (params[:search_string] || '').upcase
-    @drugs = Drug.find(:all, 
-      :select => "name", 
-      :conditions => ["concept_id IN (?) AND name LIKE ?", @concept_ids, '%' + search_string + '%'])
-    render :text => "<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>"
+    @drugs = Drug.select("name").where(["concept_id IN (?) AND name LIKE ?", @concept_ids, '%' + search_string + '%'])
+    render plain: ("<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>").html_safe
   end
   
   # Look up likely durations for the drug
   def durations
     @formulation = (params[:formulation] || '').upcase
     drug = Drug.find_by_name(@formulation) rescue nil
-    render :text => "No matching drugs found for #{params[:formulation]}" and return unless drug
+    render plain: "No matching drugs found for #{params[:formulation]}" and return unless drug
 
     # Grab the 10 most popular durations for this drug
     amounts = []
-    orders = DrugOrder.find(:all, 
-      :select => 'DATEDIFF(orders.auto_expire_date, orders.start_date) as duration_days',
-      :joins => 'LEFT JOIN orders ON orders.order_id = drug_order.order_id AND orders.voided = 0',
-      :limit => 10, 
-      :group => 'drug_inventory_id, DATEDIFF(orders.auto_expire_date, orders.start_date)', 
-      :order => 'count(*)', 
-      :conditions => {:drug_inventory_id => drug.id})
+    orders = DrugOrder.select('DATEDIFF(orders.auto_expire_date, orders.start_date) as duration_days'
+    ).where({:drug_inventory_id => drug.id}).joins('LEFT JOIN orders ON orders.order_id = drug_order.order_id AND orders.voided = 0'
+    ).group('drug_inventory_id, DATEDIFF(orders.auto_expire_date, orders.start_date)').order('count(*)').limit(10)
+
       
     orders.each {|order|
       amounts << "#{order.duration_days.to_f}" unless order.duration_days.blank?
     }  
     amounts = amounts.flatten.compact.uniq
-    render :text => "<li>" + amounts.join("</li><li>") + "</li>"
+    render plain: ("<li>" + amounts.join("</li><li>") + "</li>").html_safe
   end
 
   # Look up likely dose_strength for the drug
   def dosages
     @formulation = (params[:formulation] || '')
     drug = Drug.find_by_name(@formulation) rescue nil
-    render :text => "No matching drugs found for #{params[:formulation]}" and return unless drug
+    render plain: "No matching drugs found for #{params[:formulation]}" and return unless drug
 
     @frequency = (params[:frequency] || '')
 
     # Grab the 10 most popular dosages for this drug
     amounts = []
     amounts << "#{drug.dose_strength}" if drug.dose_strength 
-    orders = DrugOrder.find(:all, 
-      :limit => 10, 
-      :group => 'drug_inventory_id, dose', 
-      :order => 'count(*)', 
-      :conditions => {:drug_inventory_id => drug.id, :frequency => @frequency})
-    orders.each {|order|
+    orders = DrugOrder.where({:drug_inventory_id => drug.id, :frequency => @frequency})
+    orders.group('drug_inventory_id, dose').order('count(*)')..limit(10).each {|order|
       amounts << "#{order.dose}"
     }  
     amounts = amounts.flatten.compact.uniq
-    render :text => "<li>" + amounts.join("</li><li>") + "</li>"
+    render plain: ("<li>" + amounts.join("</li><li>") + "</li>").html_safe
   end
 
 	# Look up the units for the first substance in the drug, ideally we should re-activate the units on drug for aggregate units
 	def units
 		@formulation = (params[:formulation] || '').upcase
 		drug = Drug.find_by_name(@formulation) rescue nil
-		render :text => "per dose" and return unless drug && !drug.units.blank?
-		render :text => drug.units
+		render plain: "per dose" and return unless drug && !drug.units.blank?
+		render plain: drug.units
 	end
   
 	def suggested
@@ -183,10 +173,8 @@ class GenericPrescriptionsController < ApplicationController
 	# Look up all of the matching drugs for the given drug name
 	def name
 		search_string = (params[:search_string] || '').upcase
-		@drugs = Drug.find(:all, 
-		  :select => "name", 
-		  :conditions => ["name LIKE ?", '%' + search_string + '%'])
-		render :text => "<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>"
+		@drugs = Drug.select("name").where(["name LIKE ?", '%' + search_string + '%'])
+		render plain: ("<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>").html_safe
 	end
 
 	def generic_advanced_prescription
@@ -195,7 +183,7 @@ class GenericPrescriptionsController < ApplicationController
     la_concept_id = Concept.find_by_name("LA(Lumefantrine + arthemether)").concept_id
 		#@generics = MedicationService.generic.delete_if{|g| g if g[1] == la_concept_id} #Remove LA drug from list. Dosage + frequency + duration already known
     @generics = JSON.parse(File.read("#{Rails.root.to_s}/public/json/generics.json")).delete_if{|g| g if g[1] == la_concept_id}
-    @preferred_drugs = Drug.preferred_drugs.delete_if{|p| p if p[1] == la_concept_id} #Remove LA drug from list. Dosage + frequency + duration already known
+    @preferred_drugs = Drug.preferred_drugs.to_a.delete_if{|p| p if p[1] == la_concept_id} #Remove LA drug from list. Dosage + frequency + duration already known
     
 		@frequencies = MedicationService.fully_specified_frequencies
 		@formulations = {}
@@ -205,8 +193,7 @@ class GenericPrescriptionsController < ApplicationController
     
     drug_formulations = {}
     
-    Drug.all(:select => ["name, concept_id, dose_strength, units"],
-      :conditions => ["concept_id IN (?)", (preferred_drugs_concept_ids + generic_concept_ids).uniq]
+    Drug.select(["name, concept_id, dose_strength, units"]).where(["concept_id IN (?)", (preferred_drugs_concept_ids + generic_concept_ids).uniq]
     ).each do |record|
       
       if drug_formulations[record.concept_id].blank?
@@ -231,7 +218,7 @@ class GenericPrescriptionsController < ApplicationController
     end
    
     (@preferred_drugs + @generics).uniq.each { | generic |
-			drugs = Drug.find(:all,	:conditions => ["concept_id = ?", generic[1]])
+			drugs = Drug.where(["concept_id = ?", generic[1]])
 			drug_formulations = {}			
 			drugs.each { | drug |
 				drug_formulations[drug.name] = [drug.dose_strength, drug.units]
@@ -290,12 +277,12 @@ class GenericPrescriptionsController < ApplicationController
   
   def load_frequencies_and_dosages
     concept_id = params[:concept_id]
-    drugs = Drug.find(:all,	:conditions => ["concept_id = ?", concept_id])
+    drugs = Drug.where(["concept_id = ?", concept_id])
     drug_formulations = []
     drugs.each { | drug |
       drug_formulations << drug.name + ':' + drug.dose_strength.to_s + ':' + drug.units.to_s + ';'
     }
-    render :text => drug_formulations
+    render plain: drug_formulations
 	end
 
 	def create_advanced_prescription
@@ -415,21 +402,18 @@ class GenericPrescriptionsController < ApplicationController
 
   def simple_prescription
     #@generics = MedicationService.generic
-    render:layout => "application"
+    render :layout => "application"
   end
 
   def drug_formulations
     search_string = params[:search_string]
     unless search_string.blank?
-      @drugs = Drug.find(:all,
-        :select => "name",
-        :conditions => ["name LIKE ?", '%' + search_string + '%'],
-        :order => "name ASC")
+      @drugs = Drug.select("name").where(
+         ["name LIKE ?", '%' + search_string + '%']).order("name ASC")
     else
-      @drugs = Drug.find(:all, :select => "name",:order => "name ASC",
-        :limit => 10)
+      @drugs = Drug.select("name").order("name ASC").limit(10)
     end
-    render :text => "<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>"
+    render plain: ("<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>").html_safe
   end
 
   def create_simple_prescription

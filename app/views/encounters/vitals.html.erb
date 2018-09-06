@@ -482,19 +482,19 @@
     "Pulse Rate", "Weight", "Height","Oxygen Saturation","Presenting complaints"]
   %>
 
-	<%= select_tag "choice", options_for_select(vital_signs.sort), 
+	<%= select_tag "choice", options_for_select(vital_signs.sort),
 		{	:helpText => 'Select vital signs', 
 			:id => "choice", 
 			:multiple => true } %>
 
-  <%= touch_select_tag "AVPU", @patient, concept_set_options('AVPU'),
+  <%= (touch_select_tag "AVPU", @patient, concept_set_options('AVPU'),
     {
     :helpText => 'AVPU',
     :id => 'avpu',
     :condition => "getSelected().match(/AVPU/i)"
-  } %>
+  }).html_safe %>
 
-	<%= touch_text_field_tag "TEMPERATURE (C)", @patient, nil,
+	<%= (touch_text_field_tag "TEMPERATURE (C)", @patient, nil,
 		{	:id => "temperature",
 			:field_type => 'number',
 			:helptext =>"Temperature (<sup>o</sup>C)",
@@ -505,9 +505,9 @@
 			:units => 'Degrees Celcius',  
 			:validationRule => "([0-9]+\\.[0-9])|Unknown$",
 			:validationMessage => "You must enter a decimal between 0 and 9 (for example: 36<b>.6</b>)",
-			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal" } %>
+			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal" }).html_safe %>
 
-	<%= touch_text_field_tag "RESPIRATORY RATE", @patient,  nil,
+	<%= (touch_text_field_tag "RESPIRATORY RATE", @patient,  nil,
 		{	:id => "respiratory_rate",
 			:field_type => 'number',
 			:helptext => 'Respiratory Rate (Breaths per Minute)',
@@ -520,9 +520,9 @@
 			:absoluteMax => 250,
 			:validationRule => "([0-9]+(\\.[0-9])?)|Unknown$",
 			:validationMessage => "You must enter a decimal between 0 and 9 (for example: 37<b>.6</b>)",
-			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal"} %>
+			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal"}).html_safe %>
 
-	<%= touch_text_field_tag "SYSTOLIC BLOOD PRESSURE", @patient, nil,
+	<%= (touch_text_field_tag "SYSTOLIC BLOOD PRESSURE", @patient, nil,
 		{	:id => "systolic_blood_pressure",
 			:helptext => "Systolic Blood Pressure (?/Y)",
 			:field_type => "number",
@@ -533,9 +533,9 @@
 			:tt_onUnLoad => "clearTimeout(timedEvent);",
 			:condition => "getSelected().match(/BLOOD\sPRESSURE/i)",
 			:absoluteMin => 0,
-			:max => 250 } %>
+			:max => 250 }).html_safe %>
 
-	<%= touch_text_field_tag "DIASTOLIC BLOOD PRESSURE", @patient, nil,
+	<%= (touch_text_field_tag "DIASTOLIC BLOOD PRESSURE", @patient, nil,
 		{	:id => "diastolic_blood_pressure",
 			:helptext => "Diastolic Blood Pressure",
 			:field_type => "number",
@@ -544,9 +544,9 @@
 			:tt_onUnLoad => "clearTimeout(timedEvent);",
 			:condition => "getSelected().match(/BLOOD\sPRESSURE/i)",
 			:absoluteMin => 35,
-			:absoluteMax  => 140 } %>
+			:absoluteMax  => 140 }).html_safe %>
 
-	<%= touch_text_field_tag "PULSE", @patient, nil,
+	<%= (touch_text_field_tag "PULSE", @patient, nil,
 		{	:id => "pulse",
 			:helptext => 'Pulse Rate (Beats per Minute)',
 			:field_type => 'number',
@@ -556,9 +556,9 @@
 			:units => 'bpm',
 			:validationRule => "([0-9]+)|Unknown$",
 			:validationMessage => "You must enter a number between 0 and 9 (for example: 54)",
-			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal" } %>
+			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal" }).html_safe %>
 
-	<%= touch_text_field_tag "WEIGHT (KG)", @patient, nil,
+	<%= (touch_text_field_tag "WEIGHT (KG)", @patient, nil,
 		{	:id => "weight",
 			:field_type => 'number',
 			:helptext => 'Weight (KG)',
@@ -570,9 +570,9 @@
 			:units => 'kg',
 			:validationRule => "([0-9]+(\\.[0-9])?)|Unknown$",
 			:validationMessage => "You must enter a number between 0 and 9 (for example: 54<b>.6</b>)",
-			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal" } %>
+			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal" }).html_safe %>
 
-	<%= touch_text_field_tag "HEIGHT (CM)", @patient, nil,
+	<%= (touch_text_field_tag "HEIGHT (CM)", @patient, nil,
 		{	:id => "height",
 			:helptext => "Height (CM)",
 			:field_type => 'number',
@@ -584,9 +584,9 @@
 			:units => 'cm',
 			:validationRule => "([0-9]+(\\.[0-9])?)|Unknown$",
 			:validationMessage => "You must enter a number between 0 and 9 (for example: 154<b>.6</b>)",
-			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal" } %>
+			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal" }).html_safe %>
 
-	<%= touch_text_field_tag "BLOOD OXYGEN SATURATION", @patient, nil,
+	<%= (touch_text_field_tag "BLOOD OXYGEN SATURATION", @patient, nil,
 		{	:id => "oxygen",
 			:helptext => 'Blood Oxygen Saturation (%)',
 			:field_type => 'number',
@@ -597,7 +597,7 @@
 			#:absoluteMax => 250,
 			:validationRule => "([0-9]+(\\.[0-9])?)|Unknown$",
 			:validationMessage => "You must enter a number between 0 and 9 (for example: 54<b>.6</b>)",
-			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal"} %>
+			:tt_pageStyleClass => "Numeric NumbersWithUnknownAndDecimal"}).html_safe %>
 
 
 
@@ -640,25 +640,25 @@
             </td>
           </tr>
         </table>
-        <%= touch_text_area_tag "SPECIFIC PRESENTING COMPLAINT", @patient, nil,
+        <%= (touch_text_area_tag "SPECIFIC PRESENTING COMPLAINT", @patient, nil,
           { :id => "other",
           :optional => true,
           :condition => "getSelected().match(/PRESENTING COMPLAINTS/i)",
           :helpText => "Specific Presenting complaint (optional)"
-        }%>
-        <%= touch_select_tag "Life threatening condition", @patient, nil,
+        }).html_safe%>
+        <%= (touch_select_tag "Life threatening condition", @patient, nil,
           { :ajaxURL => "/encounters/life_threatening_condition?search_string=",
           :helpText => 'Life Threatening Condition',
           :id => 'life threatening condition',
           :tt_onLoad =>"document.getElementById('keyboard').style.display = 'none';"
-        } %>
+        }).html_safe %>
 
-        <%= touch_select_tag "triage category", @patient, options_for_select([]),
+        <%= (touch_select_tag "triage category", @patient, options_for_select([]),
           { :ajaxURL => "/encounters/triage_category?search_string=",
           :helpText => "Select Triage Category",
           :tt_onUnLoad => "document.getElementById('summary_container').style.display = 'none'",
           :tt_onLoad =>"clearInput();document.getElementById('keyboard').style.display = 'none';showSelectedConditions();",
-          :id => 'triage_category'} %>
+          :id => 'triage_category'}).html_safe %>
 
 
 <!-- end -->

@@ -2,7 +2,7 @@
   var patientID = "<%= params[:id]%>";
   var currentSymptom = "";
   var selectedElements = {};
-  var IDSRcomplaints = JSON.parse('<%= @idsr_complaints.to_json %>');
+  var IDSRcomplaints = JSON.parse('<%= @idsr_complaints.to_json.html_safe %>');
   var providerID = '<%= current_user.person_id %>';
   var encounter_datetime = '<%= DateTime.now() %>';
 

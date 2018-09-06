@@ -1,7 +1,26 @@
 class PatientsController < GenericPatientsController
+
   def simple_complaints
-    @idsr_complaints = JSON.parse(File.read("#{Rails.root.to_s}/public/json/idsr_complaints.json"))
+    syndromes = ["fever","Influenza like illness","respiratory","Gastrointestinal","Haema","Nephro",
+                "Trauma","Cardiovascular","General","Other"]
+   #Creating an infinite dynamic hash
+
+    lazy = lambda { |h,k| h[k] = Hash.new(&lazy) }
+    @idsr_complaints = Hash.new(&lazy)
+    syndromes.each do |syndrome|
+      @idsr_complaints["syndrome_g1"][syndrome ]= syndrome_concept_set(syndrome)
+    end
+
+    #@idsr_complaints = JSON.parse(File.read("#{Rails.root.to_s}/public/json/idsr_complaints.json").html_safe) ob
     render :layout => "menu"
+  end
+
+  def syndrome_concept_set(concept_name)
+    concept_id = ConceptName.find_by_name(concept_name).concept_id
+
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
+    options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname,item.id] }
+    return options
   end
 
 	def tab_social_history

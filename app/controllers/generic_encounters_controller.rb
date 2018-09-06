@@ -1,5 +1,5 @@
 class GenericEncountersController < ApplicationController
-  def create(params=params, session=session)
+  def create
     if params[:change_appointment_date] == "true"
       session_date = session[:datetime].to_date rescue Date.today
       type = EncounterType.find_by_name("APPOINTMENT")
@@ -311,7 +311,7 @@ class GenericEncountersController < ApplicationController
     end
 
     # Encounter handling
-		encounter = Encounter.new(params[:encounter])
+		encounter = Encounter.new(params[:encounter].permit!)
 		unless params[:location]
 		  encounter.encounter_datetime = session[:datetime] unless session[:datetime].blank?
 		else
@@ -656,7 +656,7 @@ class GenericEncountersController < ApplicationController
 
 	def observations
 		# We could eventually include more here, maybe using a scope with includes
-		encounter = Encounter.find(params[:id]).includes(:observations)
+    encounter = Encounter.where(encounter_id: params[:id]).includes(:observations).first
 		@child_obs = {}
 		@observations = []
 		encounter.observations.map do |obs|
@@ -671,8 +671,7 @@ class GenericEncountersController < ApplicationController
 			if child_obs
 				@child_obs[obs.obs_id] = child_obs
 			end
-    	end
-
+    end
 		render :layout => false
 	end
 
@@ -1424,7 +1423,7 @@ class GenericEncountersController < ApplicationController
 
 					observation = update_observation_value(observation)
 
-					Observation.create(observation)
+					Observation.create!(observation.permit!)
 				end
 			elsif extracted_value_numerics.class == Array
 				extracted_value_numerics.each do |value_numeric|
@@ -1435,7 +1434,7 @@ class GenericEncountersController < ApplicationController
 						observation.delete(:value_numeric)
 					end
 
-					Observation.create(observation.permit!)
+					Observation.create!(observation.permit!)
 				end
 			else
 				observation.delete(:value_coded_or_text_multiple)
@@ -1446,7 +1445,7 @@ class GenericEncountersController < ApplicationController
 					observation.delete(:value_numeric)
 				end
 
-				Observation.create(observation.permit!)
+				Observation.create!(observation.permit!)
 			end
 		end
   	end

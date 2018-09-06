@@ -169,7 +169,7 @@ class GenericApplicationController < ActionController::Base
 
   def concept_set(concept_name)
     concept_id = ConceptName.find_by_name(concept_name).concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     return options

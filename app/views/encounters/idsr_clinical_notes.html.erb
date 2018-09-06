@@ -49,10 +49,10 @@
         <%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
         <%= hidden_field_tag "encounter[provider_id]", current_user.person_id %>
 
-        <%= touch_text_area_tag "CLINICAL NOTES CONSTRUCT", @patient, nil,
+        <%= (touch_text_area_tag "CLINICAL NOTES CONSTRUCT", @patient, nil,
           {	:id => "clinical_notes",
           :helpText => "Clinical notes"
-        }%>
+        }).html_safe%>
 
 
         <% if @retrospective %>

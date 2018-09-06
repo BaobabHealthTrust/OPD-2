@@ -10,7 +10,7 @@
   }
 </script>
 
-<% form_tag 'creation', :method => :post do %>
+<%= form_tag 'creation', :method => :post do %>
   <%= select_tag("property", options_for_select([" ", "Yes", "No"]),
     :tt_onUnLoad => "setPropertyValue()" ,
     :id => 'value',

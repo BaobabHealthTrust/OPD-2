@@ -48,10 +48,8 @@ CONFIG = YAML.load_file(File.expand_path(File.join(File.dirname(__FILE__),
     concept_names = ['PRIMARY DIAGNOSIS','DETAILED PRIMARY DIAGNOSIS',
       'SECONDARY DIAGNOSIS','DETAILED SECONDARY DIAGNOSIS', 'SPECIFIC SECONDARY DIAGNOSIS',
       'ADDITIONAL DIAGNOSIS']
-    diagnosis_concept_ids = ConceptName.find(:all,
-                       :conditions => ["name IN (?)",concept_names]).map(&:concept_id)
-    diagnosis_obs = Observation.find(:all,
-                                     :conditions =>["concept_id IN (?) AND
+    diagnosis_concept_ids = ConceptName.where(["name IN (?)",concept_names]).map(&:concept_id)
+    diagnosis_obs = Observation.where(["concept_id IN (?) AND
                                       DATE(obs_datetime) = ? AND person_id = ?",
                                       diagnosis_concept_ids,obs_date,patient_id])
     diagnosis_obs.each do |obs|
@@ -67,11 +65,11 @@ CONFIG = YAML.load_file(File.expand_path(File.join(File.dirname(__FILE__),
      #symptoms = params[:complaints]
     # return symptoms
    enc_type = EncounterType.find_by_name("notes")
-   encounter_ids = Encounter.find(:all,:conditions=>["DATE(encounter_datetime) = ?
+   encounter_ids = Encounter.where(["DATE(encounter_datetime) = ?
                                   AND patient_id = ? AND encounter_type = ? ",
                                   Date.today.to_s,patient_id,enc_type.id]).map(&:id)
 
-   complaint_obs = Observation.find(:all,:conditions=>["encounter_id IN (?)",encounter_ids])
+   complaint_obs = Observation.where(["encounter_id IN (?)",encounter_ids])
    #group and symptom
     child_obs = {}
     group_and_symptom = []
@@ -80,7 +78,7 @@ CONFIG = YAML.load_file(File.expand_path(File.join(File.dirname(__FILE__),
       child_obs[complaint_ob.obs_group_id] = complaint_ob.value_text
    end
    child_obs.each do |key,value|
-      parent_ob = Observation.find(:first,:conditions=>["obs_id = ?",key]).value_text rescue nil
+      parent_ob = Observation.where(["obs_id = ?",key]).first.value_text rescue nil
       group_symp_comb = parent_ob+":"+value if parent_ob
       group_and_symptom << group_symp_comb
    end

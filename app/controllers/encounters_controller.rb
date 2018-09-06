@@ -139,11 +139,11 @@ class EncountersController < GenericEncountersController
 
       #proceeding with the normal flow after complaints have been captured.
 			diagnosis_concept_set_id = ConceptName.find_by_name("Diagnoses requiring specification").concept.id
-			diagnosis_concepts = Concept.find(:all, :joins => :concept_sets, :conditions => ['concept_set = ?', diagnosis_concept_set_id])
+			diagnosis_concepts = Concept.where(['concept_set = ?', diagnosis_concept_set_id]).joins(:concept_sets)
 			@diagnoses_requiring_specification = diagnosis_concepts.map{|concept| concept.fullname.upcase}.join(';')
 
 			diagnosis_concept_set_id = ConceptName.find_by_name("Diagnoses requiring details").concept.id
-			diagnosis_concepts = Concept.find(:all, :joins => :concept_sets, :conditions => ['concept_set = ?', diagnosis_concept_set_id])
+			diagnosis_concepts = Concept.where(['concept_set = ?', diagnosis_concept_set_id]).joins(:concept_sets)
       @diagnoses_requiring_details = diagnosis_concepts.map{|concept|
         next if concept.fullname.match(/MALARIA/i) #The details can only be known after Lab tests
         concept.fullname.upcase if concept.is_set == 1
@@ -152,11 +152,11 @@ class EncountersController < GenericEncountersController
 
     if (params[:encounter_type].upcase rescue '') == 'PRESENTING_COMPLAINTS'
 			complaint_concept_set_id = ConceptName.find_by_name("Presenting complaints requiring specification").concept.id
-			complaint_concepts = Concept.find(:all, :joins => :concept_sets, :conditions => ['concept_set = ?', complaint_concept_set_id])
+			complaint_concepts = Concept.where(['concept_set = ?', complaint_concept_set_id]).joins(:concept_sets)
 			@complaints_requiring_specification = complaint_concepts.map{|concept| concept.fullname.upcase}.join(';')
 
 			complaint_concept_set_id = ConceptName.find_by_name("Presenting complaints requiring details").concept.id
-			complaint_concepts = Concept.find(:all, :joins => :concept_sets, :conditions => ['concept_set = ?', complaint_concept_set_id])
+			complaint_concepts = Concept.where(['concept_set = ?', complaint_concept_set_id]).joins(:concept_sets)
 			@complaints_requiring_details = complaint_concepts.map{|concept| concept.fullname.upcase}.join(';')
     end
 
@@ -240,7 +240,6 @@ class EncountersController < GenericEncountersController
       end
 
 		end
-
 
 
 	end
@@ -594,12 +593,11 @@ class EncountersController < GenericEncountersController
     aconcept_set = []
 
     common_answers = Observation.find_most_common(ConceptName.find_by_name("Life threatening condition").concept, search_string)
-    concept_set("Life threatening condition").each{|concept| aconcept_set << concept.uniq.to_s rescue "test"}
+    concept_set("Life threatening condition").each{|concept| aconcept_set << concept.uniq.join() rescue "test"}
     set = (common_answers + aconcept_set.sort).uniq
     set.map!{|cc| cc.upcase.include?(search_string)? cc : nil}
 
     set = set.sort rescue []
-
     render plain: ("<li></li>" + "<li>" + set.join("</li><li>") + "</li>").html_safe
 
   end
@@ -665,7 +663,7 @@ class EncountersController < GenericEncountersController
     encounter.save
 
     (params[:complaints] || []).each do |complaint|
-      encounter_id = Encounter.find(:last, :order => 'encounter_id ASC').id
+      encounter_id = Encounter.order('encounter_id ASC').last.id
 		  if !complaint.blank?
         multiple = complaint.match(/[:]/)
         unless multiple.nil?
@@ -682,8 +680,8 @@ class EncountersController < GenericEncountersController
           b = Observation.create(parent_obs)
           encounter_id = b.encounter_id
           parent_concept_id = b.concept_id
-          obs_group = Observation.find(:first, :order => "obs_id DESC", :conditions => ["encounter_id =? AND concept_id =?", \
-                encounter_id, parent_concept_id])
+          obs_group = Observation.where(["encounter_id =? AND concept_id =?",
+                encounter_id, parent_concept_id]).order("obs_id DESC").first
           obs_group_id = obs_group.id if obs_group
           child_obs = {
             "encounter_id" => "#{encounter_id}",
@@ -736,7 +734,7 @@ class EncountersController < GenericEncountersController
     encounter.save
 
     (params[:lab_orders] || []).each do |order|
-      encounter_id = Encounter.find(:last, :order => 'encounter_id ASC').id
+      encounter_id = Encounter.order('encounter_id ASC').last.id
 		  if !order.blank?
         multiple = order.match(/[:]/)
         unless multiple.nil?

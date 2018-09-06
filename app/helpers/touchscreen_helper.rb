@@ -35,8 +35,7 @@ module TouchscreenHelper
 
   def touch_cd4_count_numeric_tag(concept, patient, value, options={}, time=DateTime.now())
     # Try to find an associated concept_numeric for limits
-    concept_name = ConceptName.first(:conditions => {:name => concept},
-      :include => {:concept => [:concept_numeric]})
+    concept_name = ConceptName.where({:name => concept}).includes({:concept => [:concept_numeric]}).first
     precision = concept_name.concept.concept_numeric.precision rescue {}
     options = precision.merge(options)
     options = {
@@ -55,8 +54,7 @@ module TouchscreenHelper
 
   def touch_numeric_tag(concept, patient, value, options={}, time=DateTime.now())
     # Try to find an associated concept_numeric for limits
-    concept_name = ConceptName.first(:conditions => {:name => concept},
-      :include => {:concept => [:concept_numeric]})
+    concept_name = ConceptName.where({:name => concept}).includes({:concept => [:concept_numeric]}).first
     precision = concept_name.concept.concept_numeric.precision rescue {}
     options = precision.merge(options)
     options = {
@@ -114,13 +112,13 @@ module TouchscreenHelper
      :allowFreeText => false
     }.merge(options)
 
-    selection_options = "<option value=''></option>" + choices rescue nil
+    selection_options = ("<option value=''></option>" + choices).html_safe rescue nil
 
     options = {:tt_pageStyleClass => "NoKeyboard"}.merge(options) if options[:ajaxURL].blank?
     kind = options[:multiple] ? "value_coded_or_text_multiple" : "value_coded_or_text"
     content = ""
     content << touch_meta_tag(concept, patient, time, kind, options)
-    content << select_tag("observations[][#{kind}]", selection_options.html_safe, options)
+    content << select_tag("observations[][#{kind}]", selection_options, options)
     content
   end
 
