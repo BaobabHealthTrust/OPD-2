@@ -803,9 +803,8 @@ class GenericPatientsController < ApplicationController
   def precription_data
     type = EncounterType.find_by_name('TREATMENT')
     session_date = session[:datetime].to_date rescue Date.today
-    @prescriptions = Order.where("INNER JOIN encounter e USING (encounter_id)").joins(
-        ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
-         type.id,@patient.id,session_date])
+    @prescriptions = Order.where(["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
+                                  type.id,@patient.id,session_date]).joins("INNER JOIN encounter e USING (encounter_id)")
 
     @encounters = @patient.encounters.find_by_date(session_date)
 

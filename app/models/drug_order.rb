@@ -100,7 +100,7 @@ class DrugOrder < ActiveRecord::Base
       end
     end
     ActiveRecord::Base.transaction do
-      order = encounter.orders.create(
+      order = encounter.orders.create!(
         :order_type_id => 1, 
         :concept_id => drug.concept_id, 
         :orderer => User.current.user_id, 

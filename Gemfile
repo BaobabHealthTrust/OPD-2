@@ -72,4 +72,4 @@ gem 'pdfkit'
 gem 'mechanize'
 gem 'nokogiri'
 gem 'spreadsheet'
-
+gem 'activerecord-session_store' 

@@ -145,7 +145,7 @@
               <% current_day = session[:datetime].strftime('%Y-%m-%d') rescue 'Today'%>
               <h2><%=current_day%>'s Prescriptions</h2><br />
               <div  style="height:220px; overflow: auto">
-                <% if not @prescriptions.blank? %>
+                <% if  @prescriptions.present? %>
                   <table id = 'dispensation' style = "width:100%;">
                     <tr style="text-align:left;">
                       <th style="text-align: center;">Drug</th>

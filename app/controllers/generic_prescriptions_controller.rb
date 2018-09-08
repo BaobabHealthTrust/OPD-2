@@ -282,12 +282,14 @@ class GenericPrescriptionsController < ApplicationController
     drugs.each { | drug |
       drug_formulations << drug.name + ':' + drug.dose_strength.to_s + ':' + drug.units.to_s + ';'
     }
-    render plain: drug_formulations
+
+    render plain: drug_formulations.join
 	end
 
 	def create_advanced_prescription
+
 		@patient    = Patient.find(params[:encounter][:patient_id]  || session[:patient_id]) rescue nil
-    session_date = session[:datetime].to_date rescue Date.today
+    session_date = session[:datetime].to_date rescue Time.now
 		#encounter  = MedicationService.current_treatment_encounter(@patient)
     user_person_id = current_user.person_id
     encounter = PatientService.current_treatment_encounter(@patient, session_date, user_person_id)
@@ -313,7 +315,6 @@ class GenericPrescriptionsController < ApplicationController
         start_date = Time.now() if start_date.blank?
         prn = "no"
 				auto_expire_date = start_date + prescription[:duration].to_i.days
-
         DrugOrder.write_order(encounter, @patient, nil, drug, start_date, auto_expire_date, prescription[:strength],
           prescription[:frequency], prn)
 
