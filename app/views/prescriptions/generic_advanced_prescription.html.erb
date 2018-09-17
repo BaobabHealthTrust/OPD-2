@@ -255,7 +255,7 @@
   }
 
   function addAntiMalarialDrugsButton(){
-<% if @use_col_interface == "true" %>
+<% if @use_col_interface == "true" and get_global_property_value("malaria.enabled.facility").eql?("true") %>
       buttonsDiv = document.getElementsByClassName("buttonsDiv")[0];
       button = document.createElement("button");
       button.className = "button blue navButton";

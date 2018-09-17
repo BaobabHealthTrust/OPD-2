@@ -164,6 +164,7 @@
     addHidden(theForm, "encounter[patient_id]", patientID);
     addHidden(theForm, "encounter[encounter_datetime]", encounter_datetime);
     addHidden(theForm, "encounter[provider_id]", providerID);
+    addHidden(theForm, "source","<%= @source%>");
 
     complaints = [];
     for (var symptom in selectedElements){

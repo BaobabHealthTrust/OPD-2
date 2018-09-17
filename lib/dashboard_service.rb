@@ -3,14 +3,14 @@ module DashBoardService
 CONFIG = YAML.load_file(File.expand_path(File.join(File.dirname(__FILE__),
                                                     "../config/dashboard.yml")))
   def self.push_to_couch(data)
-    #get token_authentication
     auth_token = RestClient.post(CONFIG['credentials']['url'],
                                   :username =>CONFIG['credentials']['username'],
                                   :password=>CONFIG['credentials']['password'])
     #embedd token with data
     data[:auth_token] = auth_token
-    RestClient.post(CONFIG['credentials']['dashboard_url'],data)
-    rescue RestClient::Exception => e
+    raise data.inspect
+    connect = RestClient.post(CONFIG['credentials']['dashboard_url'],data)
+  rescue RestClient::Exception => e
     raise e.http_body
   end
 
@@ -40,7 +40,7 @@ CONFIG = YAML.load_file(File.expand_path(File.join(File.dirname(__FILE__),
                                        patient_id,age,gender)
      hash[:symptoms] = pull_symptoms(patient_id)
     end
-    push_to_couch(hash) rescue nil
+    self.push_to_couch(hash)
   end
 
  def self.pull_diagnoses(observation,obs_date,national_id,patient_id,age,gender)
@@ -50,7 +50,7 @@ CONFIG = YAML.load_file(File.expand_path(File.join(File.dirname(__FILE__),
       'ADDITIONAL DIAGNOSIS']
     diagnosis_concept_ids = ConceptName.where(["name IN (?)",concept_names]).map(&:concept_id)
     diagnosis_obs = Observation.where(["concept_id IN (?) AND
-                                      DATE(obs_datetime) = ? AND person_id = ?",
+                                      DATE(obs_datetime) = ? AND person_id = ? AND voided = 0",
                                       diagnosis_concept_ids,obs_date,patient_id])
     diagnosis_obs.each do |obs|
       next if obs.value_coded.blank? #Interested only in coded answers
@@ -78,7 +78,7 @@ CONFIG = YAML.load_file(File.expand_path(File.join(File.dirname(__FILE__),
       child_obs[complaint_ob.obs_group_id] = complaint_ob.value_text
    end
    child_obs.each do |key,value|
-      parent_ob = Observation.where(["obs_id = ?",key]).first.value_text rescue nil
+      parent_ob = Observation.where(["obs_id = ? and AND voided = 0",key]).first.value_text rescue nil
       group_symp_comb = parent_ob+":"+value if parent_ob
       group_and_symptom << group_symp_comb
    end

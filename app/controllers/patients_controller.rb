@@ -4,7 +4,9 @@ class PatientsController < GenericPatientsController
     syndromes = ["fever","Influenza like illness","respiratory","Gastrointestinal","Haema","Nephro",
                 "Trauma","Cardiovascular","General","Other"]
    #Creating an infinite dynamic hash
-
+    unless params[:source].blank?
+      @source = params[:source]
+    end
     lazy = lambda { |h,k| h[k] = Hash.new(&lazy) }
     @idsr_complaints = Hash.new(&lazy)
     syndromes.each do |syndrome|
@@ -611,7 +613,7 @@ class PatientsController < GenericPatientsController
   def modify_demographics
     @patient = Patient.find(params[:patient_id]  || params[:id] || session[:patient_id]) rescue nil
     @field = params[:field]
-    render :partial => "edit_demographics", :field =>@field, :layout => true and return
+    render partial: "edit_demographics", :field =>@field, :layout => true and return
   end
 
   def update_demographics

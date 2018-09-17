@@ -678,6 +678,13 @@ class GenericEncountersController < ApplicationController
 	def void
 		@encounter = Encounter.find(params[:id])
 		@encounter.void
+
+   unless  @encounter.observations.blank?
+    (@encounter.observations || []).each do |o|
+      o.void('Voided from app')
+    end
+   end
+
 		head :ok
 	end
 

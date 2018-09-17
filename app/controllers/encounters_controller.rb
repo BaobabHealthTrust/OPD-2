@@ -7,11 +7,11 @@ class EncountersController < GenericEncountersController
     c.instance_eval do
       notes = params[:observations][0][:concept_name] rescue "" #TODO: Find a better way of this.
       encounters_to_process = ["NOTES","OUTPATIENT DIAGNOSIS"]
-
       encounter_type = params[:encounter][:encounter_type_name] rescue nil
-      if encounters_to_process.include? encounter_type #&& notes != "CLINICAL NOTES CONSTRUCT"
+			idsr_enabled = CoreService.get_global_property_value("activate.idsr.feature").eql?("true")? true : false
+			if encounters_to_process.include?(encounter_type)&& idsr_enabled
     	  DashBoardService.push_to_dashboard(params)
-      end unless encounter_type.blank?
+      end
     end
 	end
 
@@ -33,8 +33,8 @@ class EncountersController < GenericEncountersController
 		@proc =  GlobalProperty.find_by_property("facility.procedures").property_value.split(",") rescue []
 
 		@proc.each{|proc|
-		  proc_concept = ConceptName.find_by_name(proc, :conditions => ["voided = 0"]).concept_id rescue nil
-		  @procedures << [proc, proc_concept] if !proc_concept.nil?
+			proc_concept = ConceptName.find_by_name(proc).where(voided:  0).concept_id rescue nil
+			@procedures << [proc, proc_concept] if !proc_concept.nil?
 		}
 
 		@diagnosis_type = params[:diagnosis_type]
@@ -122,18 +122,16 @@ class EncountersController < GenericEncountersController
       if (point_of_care == 'true')
         current_patient_id = params[:patient_id]
 
-        complaints_count = Observation.find_by_sql("SELECT * FROM obs
-                                      left join encounter on 
-                                        encounter.encounter_id = obs.encounter_id 
-                                      left join encounter_type on 
-                                        encounter_type_id =encounter.encounter_type 
-                                        where encounter_type.name = 'NOTES' 
-                                        AND obs.obs_datetime >= DATE(now())
-                                        AND obs.voided = 0 
-                                        AND encounter.patient_id = "+current_patient_id).count
+        complaints_count = Observation.find_by_sql("SELECT * FROM encounter en
+                                        LEFT JOIN encounter_type et ON
+                                        et.encounter_type_id = en.encounter_type
+                                        WHERE et.name = 'NOTES'
+                                        AND DATE(en.encounter_datetime) >= DATE(now())
+                                        AND en.voided = 0
+                                        AND en.patient_id = #{current_patient_id}").count
         if( complaints_count == 0 && params[:encounter_type].upcase == 'OUTPATIENT_DIAGNOSIS')
           #redirect_to :action => "idsr_complaints", :patient_id => params[:patient_id] and return
-          redirect_to("/patients/simple_complaints/#{params[:patient_id]}") and return
+          redirect_to("/patients/simple_complaints/#{params[:patient_id]}?source=diagnosis") and return
         end
       end
 
@@ -706,7 +704,8 @@ class EncountersController < GenericEncountersController
     end
     create_obs(encounter, params)
     @patient_id = params[:encounter][:patient_id]
-    redirect_to("/patients/show/#{@patient_id}")
+    redirect_to("/patients/show/#{@patient_id}") if params[:source].blank?
+		redirect_to "/encounters/new/outpatient_diagnosis?patient_id=#{@patient_id}" if params[:source].present?
   end
 
   def recorded_religions

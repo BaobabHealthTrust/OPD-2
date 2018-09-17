@@ -1,6 +1,6 @@
 class DrugOrder < ActiveRecord::Base
  before_save :before_save
-  before_create :before_create
+ before_create :before_create
 
   self.table_name = "drug_order"
   self.primary_key = "order_id"

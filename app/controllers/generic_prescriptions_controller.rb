@@ -182,8 +182,17 @@ class GenericPrescriptionsController < ApplicationController
 		@patient = Patient.find(params[:patient_id] || session[:patient_id]) rescue nil
     la_concept_id = Concept.find_by_name("LA(Lumefantrine + arthemether)").concept_id
 		#@generics = MedicationService.generic.delete_if{|g| g if g[1] == la_concept_id} #Remove LA drug from list. Dosage + frequency + duration already known
-    @generics = JSON.parse(File.read("#{Rails.root.to_s}/public/json/generics.json")).delete_if{|g| g if g[1] == la_concept_id}
-    @preferred_drugs = Drug.preferred_drugs.to_a.delete_if{|p| p if p[1] == la_concept_id} #Remove LA drug from list. Dosage + frequency + duration already known
+    #@generics = JSON.parse(File.read("#{Rails.root.to_s}/public/json/generics.json")).delete_if{|g| g if g[1] == la_concept_id}
+
+    malaria_enabled = CoreService.get_global_property_value("malaria.enabled.facility").eql?("true")? true : false
+
+    if malaria_enabled
+      @generics = MedicationService.generic.delete_if{|g| g if g[1] == la_concept_id} #Remove LA drug from list. Dosage + frequency + duration already known
+      @preferred_drugs = Drug.preferred_drugs.delete_if{|p| p if p[1] == la_concept_id} #Remove LA drug from list. Dosage + frequency + duration already known
+    else
+      @generics = MedicationService.generic
+      @preferred_drugs = Drug.preferred_drugs
+    end
     
 		@frequencies = MedicationService.fully_specified_frequencies
 		@formulations = {}

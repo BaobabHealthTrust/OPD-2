@@ -17,6 +17,7 @@
 
   diagnoses_requiring_details = '<%= "#{@diagnoses_requiring_details}" %>';
   diagnoses_requiring_specification = '<%= "#{@diagnoses_requiring_specification}"%>';
+  malariaActivated = <%= get_global_property_value("malaria.enabled.facility")%>;
 
   function submit() {
     document.forms["inpatient_diagnosis"].submit();
@@ -35,7 +36,7 @@
         liElements = jQuery("li");
         for (var i = 0; i <= liElements.length - 1; i++){
 
-          if (liElements[i].innerHTML.match(/MALARIA/i)){
+          if ((liElements[i].innerHTML.match(/MALARIA/i))&& malariaActivated){
             liElements[i].setAttribute("onmousedown", "null; updateTouchscreenInputForSelect(this); showMalariaConfirmationPopup();");
             break;
           }

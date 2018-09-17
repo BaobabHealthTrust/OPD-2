@@ -159,7 +159,6 @@ class GenericPropertiesController < ApplicationController
       global_property.property = params[:property]
       global_property.property_value = (params[:property_value].downcase == "yes").to_s
       global_property.save
-
       if (params[:property] == 'database.sharing' && params[:property_value].downcase == "yes")
         check_program_encounter_table_existence = ActiveRecord::Base.connection.table_exists? 'program_encounters'
 

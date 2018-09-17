@@ -28,7 +28,7 @@ class EncounterTypesController < GenericEncounterTypesController
     roles_for_the_user = roles_for_the_user.uniq
 
     # TODO add clever sorting
-    @encounter_types = EncounterType.find(:all).map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
+    @encounter_types = EncounterType.all.map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
     @available_encounter_types = Dir.glob(Rails.root.to_s+"/app/views/encounters/*.erb").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
     @available_encounter_types -= @available_encounter_types - @encounter_types
 
@@ -39,7 +39,7 @@ class EncounterTypesController < GenericEncounterTypesController
   end
 
   def show
-  redirect_to "/encounters/new/#{params["encounter_type"].downcase.gsub(/ /,"_")}?#{params.to_param}" and return
+  redirect_to "/encounters/new/#{params["encounter_type"].downcase.gsub(/ /,"_")}?#{params.permit!.to_param}" and return
   end
 
 end
