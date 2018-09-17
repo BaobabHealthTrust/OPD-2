@@ -308,7 +308,7 @@
         <% @referral_locations.each do |referral,total| %>
           <tr>
             <td width="50%"> <span style="display:block; width:90%;"> <%= "#{referral}" %> </span> </td>
-            <td align="center" > <%= "<span > #{total} </span> " %> </td>
+            <td align="center" > <%= ("<span > #{total} </span> ").html_safe %> </td>
           </tr>
           <% end  %>
         </tbody>

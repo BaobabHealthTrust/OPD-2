@@ -805,6 +805,23 @@ module PatientService
     patient
   end
 
+
+  def self.get_debugger_details(person, current_date = Date.today)
+    patient = PatientBean.new('')
+    patient.person_id = person.id
+    patient.name = person.names.first.given_name + ' ' + person.names.first.family_name rescue nil
+    patient.sex = person.gender
+    patient.cell_phone_number = get_attribute(person,"Cell Phone Number")
+    patient.address = person.addresses.first.city_village
+    patient.landmark = person.addresses.first.address1
+    patient.patient_id = person.patient.id
+    #patient.age = cul_age(person.birthdate,person.birthdate_estimated)
+    patient.age_in_months = age_in_months(person, current_date)
+    patient.national_id = get_patient_identifier(person.patient, 'National id')
+    #patient.splitted_arv_number = patient.arv_number.split("-").last.to_i rescue 0
+    patient
+  end
+
   def self.cul_age(birthdate , birthdate_estimated , date_created = Date.today, today = Date.today)
                                                                                 
     # This code which better accounts for leap years                            

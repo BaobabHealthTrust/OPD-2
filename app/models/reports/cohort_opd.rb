@@ -261,11 +261,7 @@ class Reports::CohortOpd
   end
 
   def opd_deaths
-		 Person.count(:all,
-									:include => {:patient => {:patient_programs=>
-									 						 {:patient_states => {:program_workflow_state =>
-									 						 {:concept => {:concept_names => {}}}}}}},
-									:conditions => ["patient.patient_id IS NOT NULL
+		 Person.where(["patient.patient_id IS NOT NULL
 																	 AND patient_state.end_date IS NULL
 																	 AND patient_state.start_date >= ? AND patient_state.start_date <= ?
 																	 AND DATEDIFF(NOW(), person.birthdate)/365 >= ?
@@ -274,7 +270,8 @@ class Reports::CohortOpd
 									                 AND patient_program.program_id = ?",
 									                 @start_date, @end_date, @start_age, @end_age,
 									                 @opd_program_id]
-								)
+								).joins({:patient => {:patient_programs=> {:patient_states => {:program_workflow_state =>{
+				 :concept => {:concept_names => {}}}}}}}).count
   end
   
 	def count_patient_with_concept(params_array, start_age=nil, end_age=nil)		
@@ -288,27 +285,22 @@ class Reports::CohortOpd
 																		 WHERE #{condition_string} AND voided = 0"
 																		 ).map{|c| c.concept_id}
 																		 											 												 
-			Encounter.find(:all,
-										 :joins => [:type, :observations, [:patient => :person]],
-										 :conditions => ["encounter_type = ? AND encounter.voided = 0 AND
+			Encounter.where(["encounter_type = ? AND encounter.voided = 0 AND
 																		value_coded IN (?) AND encounter_datetime >= ?
 																		AND encounter_datetime <= ? AND DATEDIFF(NOW(), person.birthdate)/365 >= ?
 																		AND DATEDIFF(NOW(), person.birthdate)/365 <= ?",
 																		@outpatient_diagnosis_id, @ids, @start_date, @end_date,
 																		start_age, end_age]
-										).map{|e| e. patient_id}.uniq.size
+										).joins([:type, :observations, [:patient => :person]]).map{|e| e. patient_id}.uniq.size
 	end
 
   def hiv_positive
   	concept_ids_hash = {}
   	encounter_type_id = EncounterType.find_by_name("UPDATE HIV STATUS").encounter_type_id
-		ConceptName.find(:all,
-										 :conditions =>["name IN ('HIV status', 'On ART', 'POSITIVE', 'Yes')"]
+		ConceptName.where(["name IN ('HIV status', 'On ART', 'POSITIVE', 'Yes')"]
 										 ).map{|c| concept_ids_hash[c.name.upcase]=c.concept_id}
 
-		@cases = Encounter.find(:all,
-														:joins => [:type, :observations, [:patient => :person]],
-														:conditions => ["encounter_type = ? AND encounter.voided = 0 AND
+		@cases = Encounter.where(["encounter_type = ? AND encounter.voided = 0 AND
 																						(concept_id = ? OR concept_id = ?) AND (value_coded = ? OR value_coded = ?)
 																						AND encounter_datetime >= ? AND encounter_datetime <= ?
 																						AND DATEDIFF(NOW(), person.birthdate)/365 >= ? AND
@@ -316,12 +308,12 @@ class Reports::CohortOpd
 																						encounter_type_id, concept_ids_hash["HIV STATUS"],
 																						concept_ids_hash["ON ART"], concept_ids_hash["POSITIVE"],
 																						concept_ids_hash["YES"], @start_date, @end_date, @start_age, @end_age]
-														).map{|e| e. patient_id}.uniq.size
+														).joins([:type, :observations, [:patient => :person]]).map{|e| e. patient_id}.uniq.size
   end
 
   def attendance
     hiv_encounters = ["HIV RECEPTION", "HIV CLINIC REGISTRATION", "HIV STAGING", "HIV CLINIC CONSULTATION"]
-    hiv_encounter_type_ids = EncounterType.find(:all, :conditions => ["name IN (?)",
+    hiv_encounter_type_ids = EncounterType.where(["name IN (?)",
                 hiv_encounters]).map(&:encounter_type_id).join(', ')
 		@cases = Encounter.find_by_sql(
 												"SELECT patient_id, COUNT(patient_id), DATE_FORMAT(encounter_datetime,'%Y-%m-%d') enc_date 

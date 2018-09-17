@@ -223,6 +223,30 @@
       .bspan{
         left: 20%;
       }
+      .clinic_data_value {
+        /*border-top: 1px outset black;
+        border-bottom: 1px outset black;
+        border-style: outset;*/
+        width: 50px;
+        background-color: rgba(13, 118, 255, 0.25);
+        position: relative;
+        float: left;
+        display: inline;
+        border: 0px 0px 0px 0px;
+        border-radius: 50%;
+        /* border-left: 0px;
+         margin-top: 2px;*/
+        height: 50px;
+        padding: 0px;
+        line-height: 50px;
+        text-align: center;
+        text-decoration: none !important;
+        font-size: 15px;
+        font-weight: bold;
+      }
+      .clinic_data_value:hover{
+        background-color: rgba(250, 198, 33, 0.32);
+      }
     </style>
   </head>
   <body >
@@ -271,17 +295,18 @@
             <tr>
               <td width="300px"> <span style="display:block; width:90%;"> <%= key.to_s %> </span> </td>
 
-              <td align="left" > <%= "<span class='basic_span bspan' > #{value["< 6 MONTHS"]["M"]} </span> <span class='basic_span bspan'> #{value["< 6 MONTHS"]["F"]}" %> </span> </td>
+              <td align="left" > <%= ("<span class='basic_span bspan' > #{value["< 6 MONTHS"]["M"]} </span> <span class='basic_span bspan'> #{value["< 6 MONTHS"]["F"]}").html_safe %> </span> </td>
 
-              <td align="left" > <%= "<span class='basic_span bspan' > #{value["U5"]["M"]} </span> <span class='basic_span bspan'> #{value["U5"]["F"]}" %> </span> </td>
-              <td align="left" > <%= "<span class='basic_span bspan'> #{value["5-14"]["M"]} </span> <span class='basic_span bspan'> #{value["5-14"]["F"]}" %> </span> </td>
-              <td align="left" > <%= "<span class='basic_span bspan'> #{value[">14"]["M"]}  </span> <span class='basic_span bspan'> #{value[">14"]["F"]}" %> </span> </td>
+              <td align="left" > <%= ("<span class='basic_span bspan' > #{value["U5"]["M"]} </span> <span class='basic_span bspan'> #{value["U5"]["F"]}").html_safe %> </span> </td>
+              <td align="left" > <%= ("<span class='basic_span bspan'> #{value["5-14"]["M"]} </span> <span class='basic_span bspan'> #{value["5-14"]["F"]}").html_safe %> </span> </td>
+              <td align="left" > <%= ("<span class='basic_span bspan'> #{value[">14"]["M"]}  </span> <span class='basic_span bspan'> #{value[">14"]["F"]}").html_safe %> </span> </td>
               <%
               m_total = value[">14"]["M"] + value["5-14"]["M"] + value["U5"]["M"]
               f_total = value["U5"]["F"]+value["5-14"]["F"]+value[">14"]["F"]
             %>
-              <td align="left" > <%= "<span class='basic_span bspan'> #{m_total}  </span> <span class='basic_span bspan'> #{f_total}" %> </td>
-              <td align="left" style="padding-right:30px; width:130px;" > <%= "#{m_total+f_total}" %> </td>
+              <td align="left" > <%= ("<span class='basic_span bspan'> #{m_total}  </span> <span class='basic_span bspan'> #{f_total}").html_safe %> </td>
+              <td align="right" > <%= link_to ("<span class = \"clinic_data_value\" style = \"float:right\"> #{m_total+f_total}
+               </span> ").html_safe,"/cohort_tool/diagnosis_patient_list?diagnosis_name=#{key.to_s}&start_date=#{@formated_start_date}&end_date=#{@formated_start_date}&logo=#{@logo}&type=aggreg" %> </td>
             </tr>
           <% end %>
         </tbody>

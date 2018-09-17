@@ -39,8 +39,12 @@
 
 </style>
 
-<form action="/report/process_la_report" method='post' >
-  <% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '') %>
+<script>
+    var tt_cancel_destination = '/clinic'
+</script>
+
+<form action="/report/process_malaria_report" method='post' >
+  <% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '').html_safe %>
   <%= text_field_tag "start_year", nil,
     {
     :helpText => 'Start Year',

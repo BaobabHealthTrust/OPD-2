@@ -888,7 +888,7 @@ class GenericReportController < ApplicationController
   end
 
   def drug_report
-    @drugs = Drug.find(:all,:conditions =>["name IS NOT NULL"]).collect{|d|[d.name, d.drug_id]}.sort_by{|k, v|k}
+    @drugs = Drug.where(["name IS NOT NULL"]).collect{|d|[d.name, d.drug_id]}.sort_by{|k, v|k}
     render :layout => "application"
   end
 

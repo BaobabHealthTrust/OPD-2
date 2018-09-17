@@ -16,9 +16,12 @@
   }
   
 </style>
+<script>
+    var tt_cancel_destination = '/clinic'
+</script>
 
 <form name='update_dhis' method='post' action="generate_dhis_report" >
-	<% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '') %>
+	<% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '').html_safe %>
 
   	<%= select_tag 'report', options_for_select( @dhis_reports ),
 		{:helpText => "Select DHIS2 Report",

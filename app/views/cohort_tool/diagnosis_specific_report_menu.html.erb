@@ -36,7 +36,7 @@
     :tt_pageStyleClass => "Numeric NumbersOnly"
   }  %>
 
-  <%= select_tag "start_month", month_names, {
+  <%= select_tag "start_month", month_names.html_safe, {
     :helpText => 'Start Month',
     :validationMessage => 'Please enter a valid date',
     :tt_onLoad => "__$('keyboard').style.display = 'none'"
@@ -56,7 +56,7 @@
     :tt_pageStyleClass => "Numeric NumbersOnly"
   }  %>
 
-  <%= select_tag "end_month", month_names, {
+  <%= select_tag "end_month", month_names.html_safe, {
     :helpText => 'End Month',
     :validationJS => "validateDOB();",
     :validationMessage => 'Please enter a valid date',

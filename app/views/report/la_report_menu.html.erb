@@ -33,20 +33,17 @@
     display:none;
   }
 
-  .tt_controls_end_day #Unknown {
+  .tt_controls_end_day #Unknown { 
     display:none;
   }
 
 </style>
+<script>
+    var tt_cancel_destination = '/clinic'
+</script>
 
-<form action="/report/process_drug_report" method='post' >
-
-  <%=  select_tag(:drug_id, options_for_select(@drugs),
-    { :field_type => 'alpha',
-      :helpText => 'Select drug'
-    })%>
-
-  <% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '') %>
+<form action="/report/process_la_report" method='post' >
+  <% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '').html_safe %>
   <%= text_field_tag "start_year", nil,
     {
     :helpText => 'Start Year',

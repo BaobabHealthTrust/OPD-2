@@ -5,16 +5,18 @@
     <%= stylesheet_link_tag 'extra_buttons' %>
     <%= javascript_include_tag 'jquery_data_table.js' %>
     <%= stylesheet_link_tag 'jquery.dataTables' %>
-    <%=javascript_include_tag "jquery.table2CSV.min" %>
+	<%=javascript_include_tag "jquery.table2CSV.min" %>
     <script type="text/javascript" charset="utf8" src="/javascripts/jquery.dataTables.min.js"></script>
     <script>
       jQuery(document).ready(function($) {
           $('#table_id').dataTable({
             "bAutoWidth": true,
+            "bPaginate": false,
             "bProcessing": true,
             "sScrollY": "400px",
             "bInfo": true,
-            "bPaginate": false
+            "bPaginate": false,
+			"bSort": false
           });
     search_box = $('#table_id').dataTable()
     search = document.getElementsByTagName("input")[0];
@@ -78,11 +80,6 @@
     table_length.setAttribute("style","width:100px;");
 
   })
-
-  function showPatients(obj){
-    person_ids = obj.getAttribute("person_ids");
-    window.location = "/cohort_tool/patient_details?person_ids=" + person_ids;
-  }
     </script>
 
     <script>
@@ -172,7 +169,7 @@
       }
     </style>
     <style>
-      div {
+       div {
         -moz-user-select: none;
       }
       .basic_span {
@@ -181,11 +178,28 @@
         display:block;
         float:left;
       }
-
+	  .create_button a{
+		background-color: #7784AE;
+		border-bottom: 1px outset black;
+		border-radius: 7px 7px 7px 7px;
+		border-style: outset;
+		border-top: 1px outset black;
+		color: #E8EAF1;
+		display: block;
+		padding: 10px 16px 10px 10px;
+		text-align: center;
+		text-decoration: none !important;
+		}
+	 a:hover {
+		  color: black;
+		}
+     a:visited {color: white}
       .logo {
         float:left
       }
-
+	  thead {
+		width: 100%;
+	  }
       #table_id {
         width: 100%;
       }
@@ -212,77 +226,96 @@
       #table_id_info{
         left: 10px;
         position: absolute;
-        top: 476px;
+        top: 455px;
         font-weight:bold;
       }
       #table_id_length{
         display:none;
       }
        #table_id_paginate{
-        display:none;
-      }
-      #num{ display:none; }
-      #char{ display:none; }
+        display:none;}
 
-      #number {
-    background-color: #4a708b;
-    border-bottom: 1px outset black;
-    color: white;
-    padding: 10px 16px 10px 10px;
-    text-align: center;
-    text-decoration: none;
-    cursor: pointer;
-}
-    </style>
-  </head>
-  <body >
-    <%= image_tag(@logo, :class => "logo")%>
-    <br /><b style="margin-left:75px"><%= @current_location_name %></b><br />
-      <b style="position:relative; top:0px;margin-left:75px"><%= @report_name.humanize.split.map{|w| w.capitalize}.join(' ') %></b><br />
-   
-    <br /><b style="position: relative; display:block; font-weight:bold; top:-15px; padding-left:30px;margin-left:200px"> Dates : <%= "#{@formated_start_date} to #{@formated_end_date}"%> </b>
+       .clinic_data{
+           position:relative;
+           float:left;
+           display:block;
+           background-color: #64a0c2;
+           border: 0px 0px 2px 0px;
+           border-radius: 7px 7px 7px 7px;
+           border-left:0px;
+           margin-top:2px;
+           height:100%;
+           padding: 10px 16px 10px 10px;
+           text-align: center;
+           text-decoration: none !important;
+           display: block;
+           font-size:15px;
+           font-weight: bold;
+           color: #ffffff;
+       }
+</style>
+</head>
+<body>
+<%= image_tag(@logo, :class => "logo")%>
+<br /><b style="margin-left:75px">Facility : <%= Location.current_health_center.name  %></b><br />
 
-          <b style="position: relative; display:block; font-weight:bold; top:-15px; padding-left:30px;margin-left:200px"> Group (s) : <%= "#{@age_groups.join(' , ').to_s}" %>  </b><br /><br />
+<b style="position:relative; top:0px;margin-left:75px">Diagnosis Name : <%= @diagnosis_name.humanize.split.map{|w| w.capitalize}.join(' ') %></b><br />
 
-    <div>
-      <table  id="table_id" class="display" >
-        <thead>
-          <tr  style="background-color:gray">
-            <th align="left"> Diagnosis <p />
-            </th>
-            <th align="left">
-              Address  <p />
-            </th>
-            <th align="center">
-              Total  <p />
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <% diagnosis =0
-         village=1
-         total=2
-         person_ids = 3
-      %>
-        <% @diagn_address.each do |address| %>
-      <tr>
-        <td width="35%"> <span style="display:block; width:90%;"> <%= address[diagnosis] %> </span> </td>
-        <td width="35%" align="left" > <%= ("<span class='basic_span' > #{ address[village]} </span> ").html_safe %> </td>
-        <td onclick="showPatients(this)" person_ids ="<%= address[person_ids].join(', ') %>" id="number" width="30%"  > <%= ("<span class='basic_span' style='width: 100%'> #{ address[total]} </span> ").html_safe %> </td>
-      </tr>
-    <% end %>
-        </tbody>
-      </table>
-    </div>
-    <div class="horizontal_line">
-      <hr width="100%" color="gray"/>
-    </div>
+
+<br /><b style="position: relative; display:block; font-weight:bold; top:-15px; padding-left:30px;margin-left:200px"> Dates : <%= "#{@start_date} to #{@end_date}"%> </b>
+
+
+
+<div style="border: 3px solid #80890F">
+  <table id="table_id" class="display">
+			<thead>
+					<tr>    <th>National ID</th>
+							<th>Name</th>
+                            <th>Sex</th>
+                            <th>Cell Phone Number</th>
+                            <th>Address</th>
+                            <th>Landmark</th>
+							<th>Age</th>
+							<th>&nbsp;<br></th>
+					</tr>
+                                        
+			 </thead>
+			  <tbody>
+
+				<% @report.each do |data_row| %>
+                                                                        <%#= raise session[:pre_art]["earliest_start_date"].to_yaml %>
+					<tr>
+                      <td><%= data_row.national_id %></td>
+                      <td><%= data_row.name %></td>
+                      <td><%= data_row.sex %></td>
+                      <td><%= data_row.cell_phone_number %></td>
+                      <td><%= data_row.address %></td>
+                      <td><%= data_row.landmark %></td>
+
+                                          <%if data_row.age_in_months.to_i != 0 %>
+									      <%if data_row.age_in_months.to_i < 12%>
+									        <td align='center'><%= data_row.age_in_months %> Months</td>
+                                                                                <%else%>
+													 <td align='center'><%= (data_row.age_in_months/12).to_i rescue 0 %> Years</td>
+										 <%end%>
+                                          <%else%>
+                                            <td align='center'>Unknown age</td>
+                                         <%end%>
+										  <td align='center'>
+
+                                           <%= link_to ("<span class='clinic_data'>View</span>").html_safe, "/patients/show/#{data_row.person_id}?session=#{session[:cohort]["Earliest_start_dates"][data_row.patient_id] rescue session[:pre_art]["earliest_start_date"][data_row.patient_id.to_i] rescue 0}" %>
+
+                                           </td>
+									</tr>
+							<%end%>
+		
+			</tbody>
+  </table>
+</div>
     <div id="keypad">
       <span class="keypad">
       </span>
     </center>
-
   </div>
-
 </body>
 </html>

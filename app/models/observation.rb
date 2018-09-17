@@ -5,7 +5,7 @@ class Observation < ActiveRecord::Base
   self.table_name = "obs"
   self.primary_key = "obs_id"
   include Openmrs
-
+  belongs_to :person, -> {where(voided: 0)}
   belongs_to :encounter, -> {where(voided: 0)}
   belongs_to :order, -> {where(voided: 0)}, optional: true
   belongs_to :concept, -> {where(retired: 0)}, optional: true
