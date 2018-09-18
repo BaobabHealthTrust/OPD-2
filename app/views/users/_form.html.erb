@@ -1,4 +1,4 @@
-<%= error_messages_for 'user' %>
+
 <%case  controller.action_name when "search_user"%>
       <p><label for="user_username">Username</label><br/>
         <%= @username = User.all(:order =>'username').map{|u|[u.username]}
@@ -48,7 +48,7 @@
       <%= select_tag "person[gender]", options_for_select({"" => "", "Male" => "M", "Female" => "F"}), {:helpText => "Gender"} %>
 
       <p><label for="user_role_role_id">User Role</label></br>
-      <%= text_field 'user_role', 'role_id', :xhelpText => 'User role', :ajaxURL => '/user/role/Role?field=role&value='%></p>
+      <%= text_field 'user_role', 'role_id', :xhelpText => 'User role', :ajaxURL => '/users/role/Role?field=role&value='%></p>
         
 
       <!--p><label for="user_role_admin_role">Is user a system administrator?</label><br/-->

@@ -55,7 +55,7 @@
       }
       optionsString << "<option>" "Unknown" "</option>"
   %>
-  <%= select_tag :set_month, optionsString, {:helpText => 'Month',:id => "set_month"}%>
+  <%= select_tag :set_month, optionsString.html_safe, {:helpText => 'Month',:id => "set_month"}%>
 
   <%day=Array.new(31){|d|d + 1 } 
     unknown=Array.new

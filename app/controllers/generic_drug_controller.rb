@@ -153,8 +153,8 @@ class GenericDrugController < ApplicationController
   end
 
   def available_name    
-    ids = Pharmacy.active.find(:all).collect{|p|p.drug_id} rescue []
-    @names = Drug.find(:all,:conditions =>["name LIKE ? AND drug_id IN (?)","%" + 
+    ids = Pharmacy.active.all.collect{|p|p.drug_id} rescue []
+    @names = Drug.where(["name LIKE ? AND drug_id IN (?)","%" +
           params[:search_string] + "%", ids]).collect{|drug| drug.name}
     render plain: ("<li>" + @names.map{|n| n } .join("</li><li>") + "</li>").html_safe
   end
@@ -223,7 +223,7 @@ class GenericDrugController < ApplicationController
       data[drug][qty_size]["id"] = entry.id
     }
 
-    render :text => data.to_json
+    render plain: data.to_json
   end
 
   def void

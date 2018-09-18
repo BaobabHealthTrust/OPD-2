@@ -40,7 +40,7 @@ class GenericUsersController < ApplicationController
     roles = roles.map do |r|
       "<li value='#{r.role}'>#{r.role.gsub('_',' ').capitalize}</li>"
     end
-    render :text => roles.join('') and return
+    render plain: roles.join('') and return
   end
 
   def username
@@ -57,17 +57,17 @@ class GenericUsersController < ApplicationController
       users = @users_with_provider_role.map{| u | "<li value='#{u.username}'>#{u.username}</li>" }
     end
 
-    render :text => users.join('') and return
+    render plain: users.join('') and return
   end
 
  def health_centres
      redirect_to(:controller => "patient", :action => "menu")
-     @health_centres = Location.find(:all,  :order => "name").map{|r|[r.name, r.location_id]}
+     @health_centres = Location.order("name").map{|r|[r.name, r.location_id]}
  end
 
  def list_clinicians
  	@clinician_role = Role.find_by_role("clinician").id
- 	@clinicians = UserRole.find_all_by_role_id(@clinician_role)
+ 	@clinicians = UserRole.where(role_id: @clinician_role)
  end
 
   def logout
@@ -111,7 +111,7 @@ class GenericUsersController < ApplicationController
     unless params[:id].blank?
      @user = User.find(params[:id])
     else
-     @user = User.find(:first, :order => 'date_created DESC')
+     @user = User.order('date_created DESC').first
     end
     render :layout => 'menu'
   end
@@ -122,7 +122,7 @@ class GenericUsersController < ApplicationController
 
   def create
     session[:user_edit] = nil
-    existing_user = User.find(:first, :conditions => {:username => params[:user][:username]}) rescue nil
+    existing_user = User.where({:username => params[:user][:username]}).first rescue nil
 
     if existing_user
       flash[:notice] = 'Username already in use'
@@ -142,10 +142,10 @@ class GenericUsersController < ApplicationController
 
 	params[:user][:password] = params[:user][:plain_password]
 	params[:user][:plain_password] = nil
-    person = Person.create(params[:person])
-    person.names.create(params[:person_name])
+    person = Person.create(params[:person].permit!)
+    person.names.create(params[:person_name].permit!)
     params[:user][:user_id] = nil
-    @user = RawUser.new(params[:user])
+    @user = RawUser.new(params[:user].permit!)
     @user.person_id = person.id
     if @user.save
      user = UserActivation.new
@@ -163,9 +163,10 @@ class GenericUsersController < ApplicationController
        # user_role.save
       #}
       #else
-		@user.update_attributes(params[:user])
+     user_params = params[:user].reject!{|key,value| key.eql?("user_id")}
+		@user.update_attributes(user_params)
         user_role = UserRole.new
-        user_role.role = Role.find_by_role(params[:user_role][:role_id])
+        user_role.role = Role.find_by_role(params[:user_role][:role_id]).role
         user_role.user_id = @user.user_id
         user_role.save
      # end
@@ -386,9 +387,8 @@ class GenericUsersController < ApplicationController
 
   def properties
     if request.post?
-      property = UserProperty.find(:first,
-            :conditions =>["property = ? AND user_id = ?",'preferred.keyboard',
-            current_user.id])
+      property = UserProperty.where(["property = ? AND user_id = ?",'preferred.keyboard',
+            current_user.id]).first
       if property.blank?
         property = UserProperty.new()
         property.user_id = current_user.id
@@ -470,11 +470,11 @@ class GenericUsersController < ApplicationController
   end
 
   def users
-  		@users = User.find(:all)
+  		@users = User.all
   end
 
   def barcodes
-      @users = User.find(:all)
+      @users = User.all
   end
 
   def generate_user_barcode

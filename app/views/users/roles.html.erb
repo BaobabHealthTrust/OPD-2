@@ -6,7 +6,7 @@
   .options { height: 506px; }
 </style>
 
-<form method = 'post' action = "/user/set_roles_for_role/<%=@role%>">
+<form method = 'post' action = "/users/set_roles_for_role/<%=@role%>">
   <%= select_tag 'roles[select_role][]',
       options_for_select(@roles, @selected_role_roles),
       :helpText => "Set child roles for #{@role}",

@@ -22,7 +22,7 @@ var tt_cancel_destination = "/clinic";  // /management"
 <%= text_field_tag "drug_name", nil, {:id => 'drug_name', :field_type => 'alpha', 
   :helpText => 'Drug name', :ajaxURL =>  '/drug/available_name?search_string=', :condition => '', :tt_onLoad  => '' } %>
 
-<%= touch_date_tag "encounter_date", 'encounter_date', nil,
+<%= touch_date_tag "encounter_date", '', nil,
     {:id => "delivery_date",
      :absoluteMax => Date.today,	
      :helpText => "Edit date"} %>

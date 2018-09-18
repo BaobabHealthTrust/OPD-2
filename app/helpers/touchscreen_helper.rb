@@ -28,8 +28,10 @@ module TouchscreenHelper
       :tt_pageStyleClass => "Date DatesOnly"
     }.merge(options)                 
     content = ""
-    content << text_field_tag("observations[][value_datetime]", value, options) 
+    content << text_field_tag("observations[][value_datetime]", value, options)
+    if patient.present?
     content << touch_meta_tag(concept, patient, time, 'value_datetime', options)
+    end
     content
   end
 
@@ -117,7 +119,7 @@ module TouchscreenHelper
     options = {:tt_pageStyleClass => "NoKeyboard"}.merge(options) if options[:ajaxURL].blank?
     kind = options[:multiple] ? "value_coded_or_text_multiple" : "value_coded_or_text"
     content = ""
-    content << touch_meta_tag(concept, patient, time, kind, options)
+    content << touch_meta_tag(concept, patient, time, kind, options)  if patient.present?
     content << select_tag("observations[][#{kind}]", selection_options, options)
     content
   end
