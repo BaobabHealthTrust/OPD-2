@@ -596,7 +596,7 @@ class GenericPeopleController < ApplicationController
       #if params
       if not people_ids.blank? or not @dde_search_results.blank?
         redirect_to :action => :create_confirm , :people_ids => people_ids ,
-          :user_entered_params => @parameters and return
+          :user_entered_params => @parameters.permit! and return
       end
     end
 

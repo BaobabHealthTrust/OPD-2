@@ -1144,22 +1144,20 @@ class GenericPatientsController < ApplicationController
   def previous_sputum_results(registration_date, patient_id)
     sputum_concept_names = ["AAFB(1st) results", "AAFB(2nd) results",
       "AAFB(3rd) results", "Culture(1st) Results", "Culture-2 Results"]
-    sputum_concept_ids = ConceptName.find(:all, :conditions => ["name IN (?)",
+    sputum_concept_ids = ConceptName.where(["name IN (?)",
         sputum_concept_names]).map(&:concept_id)
-    obs = Observation.find(:all,
-      :conditions => ["person_id = ? AND concept_id IN (?) AND date_created < ?",
-        patient_id, sputum_concept_ids, registration_date],
-      :order => "obs_datetime desc", :limit => 3)
+    obs = Observation.where(["person_id = ? AND concept_id IN (?) AND date_created < ?",
+        patient_id, sputum_concept_ids, registration_date]).order("obs_datetime desc").limit(3)
   end
 
   def given_sputum_results(patient_id)
     @given_results = []
-    Encounter.find(:last,:conditions =>["encounter_type = ? and patient_id = ?",
-        EncounterType.find_by_name("GIVE LAB RESULTS").id,patient_id]).observations.map{|o| @given_results << o.answer_string.to_s.strip if o.to_s.include?("Laboratory results given to patient")} rescue []
+    Encounter.where(["encounter_type = ? and patient_id = ?",
+        EncounterType.find_by_name("GIVE LAB RESULTS").id,patient_id]).last.observations.map{|o| @given_results << o.answer_string.to_s.strip if o.to_s.include?("Laboratory results given to patient")} rescue []
   end
 
   def get_recent_lab_orders_label(patient_id)
-    encounters = Encounter.find(:all,:conditions =>["encounter_type = ? and patient_id = ?",
+    encounters = Encounter.where(["encounter_type = ? and patient_id = ?",
         EncounterType.find_by_name("LAB ORDERS").id,patient_id]).last(5)
     observations = []
 
@@ -1234,8 +1232,8 @@ class GenericPatientsController < ApplicationController
     patient = Patient.find(patient_id)
     patient_bean = PatientService.get_patient(patient.person)
     demographics = mastercard_demographics(patient)
-    hiv_staging = Encounter.find(:last,:conditions =>["encounter_type = ? and patient_id = ?",
-        EncounterType.find_by_name("HIV Staging").id,patient.id])
+    hiv_staging = Encounter.where(["encounter_type = ? and patient_id = ?",
+        EncounterType.find_by_name("HIV Staging").id,patient.id]).last
 
     tb_within_last_two_yrs = "tb within last 2 yrs" unless demographics.tb_within_last_two_yrs.blank?
     eptb = "eptb" unless demographics.eptb.blank?
@@ -1587,11 +1585,9 @@ class GenericPatientsController < ApplicationController
     encounter_type = EncounterType.find_by_name('DISPENSING').id
     amount_dispensed_concept_id = ConceptName.find_by_name('Amount dispensed').concept_id
     regimens.map do | regimen_type , ids |
-      encounter = Encounter.find(:first,
-        :joins => "INNER JOIN obs ON encounter.encounter_id = obs.encounter_id",
-        :conditions =>["encounter_type=? AND encounter.patient_id = ? AND concept_id = ?
-                                 AND encounter.voided = 0",encounter_type , patient_obj.id , amount_dispensed_concept_id ],
-        :order =>"encounter_datetime")
+      encounter = Encounter.where(["encounter_type=? AND encounter.patient_id = ? AND concept_id = ?
+                                 AND encounter.voided = 0",encounter_type , patient_obj.id , amount_dispensed_concept_id ]
+      ).joins("INNER JOIN obs ON encounter.encounter_id = obs.encounter_id").order("encounter_datetime").first
       first_treatment_encounters << encounter unless encounter.blank?
     end
 
@@ -1631,8 +1627,8 @@ class GenericPatientsController < ApplicationController
     visits.eptb = 'Yes' if staging_ans.map{|obs|ConceptName.find(obs.value_coded_name_id).name}.include?(ans[0])
     visits.pulmonary_tb = 'Yes' if staging_ans.map{|obs|ConceptName.find(obs.value_coded_name_id).name}.include?(ans[2])
 
-    hiv_staging = Encounter.find(:last,:conditions =>["encounter_type = ? and patient_id = ?",
-        EncounterType.find_by_name("HIV Staging").id,patient_obj.id])
+    hiv_staging = Encounter.where(["encounter_type = ? and patient_id = ?",
+        EncounterType.find_by_name("HIV Staging").id,patient_obj.id]).last
 
     visits.who_clinical_conditions = ""
 
@@ -2000,8 +1996,7 @@ class GenericPatientsController < ApplicationController
     when 'arv_number'
       type = params['identifiers'][0][:identifier_type]
       #patient = Patient.find(params[:patient_id])
-      patient_identifiers = PatientIdentifier.find(:all,
-        :conditions => ["voided = 0 AND identifier_type = ? AND patient_id = ?",type.to_i,patient.id])
+      patient_identifiers = PatientIdentifier.where(["voided = 0 AND identifier_type = ? AND patient_id = ?",type.to_i,patient.id])
 
       patient_identifiers.map{|identifier|
         identifier.voided = 1
@@ -2040,7 +2035,8 @@ class GenericPatientsController < ApplicationController
     when "occupation"
       attribute = params[:person][:attributes]
       occupation_attribute = PersonAttributeType.find_by_name("Occupation")
-      exists_person_attribute = PersonAttribute.find(:first, :conditions => ["person_id = ? AND person_attribute_type_id = ?", patient.person.id, occupation_attribute.person_attribute_type_id]) rescue nil
+      exists_person_attribute = PersonAttribute.where(["person_id = ? AND person_attribute_type_id = ?",
+                                                       patient.person.id, occupation_attribute.person_attribute_type_id]) rescue nil
       if exists_person_attribute
         exists_person_attribute.update_attributes({'value' => attribute[:occupation].to_s})
       end
@@ -2536,8 +2532,7 @@ class GenericPatientsController < ApplicationController
       @patient = Patient.find(params[:patient_id])
 
       if(@type)
-        @enc = @patient.encounters.find(:all, :joins => :observations,
-          :conditions => ['encounter_type = ?', @type])
+        @enc = @patient.encounters.where(['encounter_type = ?', @type]).joins(:observations)
 
         if(@enc)
           reason = ""

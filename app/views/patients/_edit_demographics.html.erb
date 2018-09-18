@@ -23,7 +23,7 @@
   }
 </script>
 
-<% form_for :person, @person, :url => { :action => "update_demographics" } do |f| %>
+<%= form_tag :action => "update_demographics"  do |f| %>
   <%
     case @field
       when 'first_name'
@@ -35,7 +35,11 @@
   <%= text_field_tag "person[names][family_name]", params[:family_name], {:id => 'family_name', :field_type => 'alpha', :helpText => 'Last name', :ajaxURL => '/person_names/family_names?search_string=', :allowFreeText => true, :condition => '$("family_name").value == "" || skipped[tstCurrentPage] == 1', :tt_onLoad => 'seen(tstCurrentPage);' } %>
 
 <%when 'gender'%>
-  Gender: <%= f.select :gender, {"" => "", "Male" => "M", "Female" => "F"}, {:selected => params[:gender]}, {:id => 'gender', :helpText => 'Gender', :condition => '$("gender").value == "" || skipped[tstCurrentPage] == 1', :tt_onLoad => 'seen(tstCurrentPage);' } %>
+  Gender: <%= select_tag "person[gender]",options_for_select({"" => "", "Male" => "M", "Female" => "F"},
+        params[:gender]),
+        {:id => 'gender', :helpText => 'Gender',
+        :condition => '$("gender").value == "" || skipped[tstCurrentPage] == 1',
+        :tt_onLoad => 'seen(tstCurrentPage);' } %>
 
 <%when 'birthdate'%>
   <%= text_field_tag "person[birth_year]", nil, {:helpText => 'Year of Birth', :field_type => 'number', :absoluteMin => "1890", :min => "1940", :absoluteMax => Date.today.year, :tt_pageStyleClass => "Numeric NumbersOnly", :tt_onLoad => 'seen(tstCurrentPage);' }  %>
