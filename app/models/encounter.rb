@@ -78,9 +78,20 @@ EOF
   end
 
   def self.statistics(encounter_types, opts={})
+
     encounter_types = EncounterType.where(['name IN (?)', encounter_types])
     encounter_types_hash = encounter_types.inject({}) {|result, row| result[row.encounter_type_id] = row.name; result }
-    rows = self.where(['encounter_type IN (?)', encounter_types.map(&:encounter_type_id)]).where(opts[:conditions]).group("encounter_type").select("count(*) as number, encounter_type")
+    unless opts[:joins].blank?
+    rows = self.select("count(*) as number, encounter_type").where(['encounter_type IN (?)', encounter_types.map(&:encounter_type_id)]).where(
+        opts[:conditions]
+    ).joins(opts[:joins]).group("encounter_type")
+    else
+      rows = self.select("count(*) as number, encounter_type").where(['encounter_type IN (?)', encounter_types.map(&:encounter_type_id)]).where(
+          opts[:conditions]
+      ).group("encounter_type")
+    end
+
+
     return rows.inject({}) {|result, row| result[encounter_types_hash[row['encounter_type']]] = row['number']; result }
   end
 
@@ -91,6 +102,42 @@ EOF
       program_encounter.encounter_id = self.encounter_id
       program_encounter.program_id = Program.where(["name =?","OPD Program"]).last.program_id
       program_encounter.save
+    end
+  end
+
+  def self.generate_msi(patient_id, person, patient_info, user, multiple)
+
+    study_id = get_radio_obs(patient_id)
+    sample_file_path = Rails.root.to_s+"/db/sample.msi"
+    save_file_path = "/tmp/#{study_id + '_' + patient_info.name.gsub(' ', '_')}_scheduled_radiology.msi"
+
+    # using eval() might decrease performance, not sure if there's a better way to do this.
+    msi_file_data = eval(File.read(sample_file_path))
+
+    File.open(save_file_path, "w+") do |f|
+      f.write(msi_file_data)
+    end
+    send_scheduled_msi("#{save_file_path}")
+  end
+
+  # get radiology observations data for patient
+  def self.get_radio_obs(patient_id)
+    encounter_type = EncounterType.find_by_name("RADIOLOGY EXAMINATION").id
+    encounter_id = Encounter.where(["patient_id=? and encounter_type = ?",
+                                    patient_id,encounter_type]).order("encounter_datetime DESC").first.id
+    accession_code = Observation.where(["encounter_id = ? AND person_id = ? AND accession_number IS NOT NULL",
+                                        encounter_id, patient_id]).order("obs_datetime desc").first.accession_number
+    return accession_code
+  end
+
+  # send created msi file to ftp server
+  def self.send_scheduled_msi(file_path)
+    # connect with FTP server
+    # NOTE: Settings[:ftp_host], Settings[:ftp_user_name], Settings[:ftp_pw] is in application.yml file.
+    Net::FTP.open(Settings[:ftp_host]) do |ftp|
+      ftp.passive = true
+      ftp.login(Settings[:ftp_user_name], Settings[:ftp_pw])
+      ftp.putbinaryfile(file_path)
     end
   end
 

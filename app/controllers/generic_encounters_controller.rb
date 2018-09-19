@@ -342,7 +342,7 @@ class GenericEncountersController < ApplicationController
 				work_station_concept_id = ConceptName.find_by_name("Workstation location").concept_id
 
 				vitals_encounter_id = EncounterType.find_by_name("VITALS").encounter_type_id
-				enc = Encounter.find(:all, :conditions => ["encounter_type = ? AND patient_id = ?
+				enc = Encounter.where(["encounter_type = ? AND patient_id = ?
 											AND voided=0", vitals_encounter_id, @patient.id])
 
 				encounter.observations.each do |o|
@@ -745,7 +745,7 @@ class GenericEncountersController < ApplicationController
 		@prescriptions = Order.where(["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
                                   type.id,@patient.id,session_date]).joins("INNER JOIN encounter e USING (encounter_id)")
 		@historical = @patient.orders.historical.prescriptions.all
-		@restricted = ProgramLocationRestriction.all(:conditions => {:location_id => Location.current_health_center.id })
+		@restricted = ProgramLocationRestriction.where({:location_id => Location.current_health_center.id }) rescue nil
 		@restricted.each do |restriction|
 			@prescriptions = restriction.filter_orders(@prescriptions)
 			@historical = restriction.filter_orders(@historical)
@@ -764,9 +764,8 @@ class GenericEncountersController < ApplicationController
 
 	def is_first_tb_registration(patient_id)
 		session_date = session[:datetime].to_date rescue Date.today
-		tb_registration = Encounter.find(:first,
-			:conditions =>["patient_id = ? AND encounter_type = ? AND DATE(encounter_datetime) < ?",
-			patient_id,EncounterType.find_by_name('TB REGISTRATION').id, session_date]) rescue nil
+		tb_registration = Encounter.where(["patient_id = ? AND encounter_type = ? AND DATE(encounter_datetime) < ?",
+			patient_id,EncounterType.find_by_name('TB REGISTRATION').id, session_date]).first rescue nil
 
 		return true if tb_registration.nil?
 		return false
@@ -791,10 +790,10 @@ class GenericEncountersController < ApplicationController
 
 	def recent_lab_results(patient_id, session_date = Date.today)
 		sputum_concept_names = ["AAFB(1st) results", "AAFB(2nd) results", "AAFB(3rd) results", "Culture(1st) Results", "Culture-2 Results"]
-		sputum_concept_ids = ConceptName.find(:all, :conditions => ["name IN (?)", sputum_concept_names]).map(&:concept_id)
+		sputum_concept_ids = ConceptName.where(["name IN (?)", sputum_concept_names]).map(&:concept_id)
 
-		lab_results = Encounter.find(:last,:conditions =>["encounter_type = ? AND patient_id = ? AND DATE(encounter_datetime) >= ?",
-			EncounterType.find_by_name("LAB RESULTS").id, patient_id, (session_date.to_date - 3.month).strftime('%Y-%m-%d 00:00:00')])
+		lab_results = Encounter.where(["encounter_type = ? AND patient_id = ? AND DATE(encounter_datetime) >= ?",
+			EncounterType.find_by_name("LAB RESULTS").id, patient_id, (session_date.to_date - 3.month).strftime('%Y-%m-%d 00:00:00')]).last
 
 		positive_result = false
 
@@ -1282,12 +1281,13 @@ class GenericEncountersController < ApplicationController
 
 			if(observation[:parent_concept_name])
 				concept_id = Concept.find_by_name(observation[:parent_concept_name]).id rescue nil
-				observation[:obs_group_id] = Observation.find(:last, :conditions=> ['concept_id = ? AND encounter_id = ?', concept_id, encounter.id], :order => "obs_id ASC, date_created ASC").id rescue ""
+				observation[:obs_group_id] = Observation.where(['concept_id = ? AND encounter_id = ?', concept_id, encounter.id]
+        ).order("obs_id ASC, date_created ASC").last.id rescue ""
 				observation.delete(:parent_concept_name)
 			end
 
 			concept_id = Concept.find_by_name(observation[:concept_name]).id rescue nil
-			obs_id = Observation.find(:first, :conditions=> ['concept_id = ? AND encounter_id = ?',concept_id, encounter.id]).id rescue nil
+			obs_id = Observation.where(['concept_id = ? AND encounter_id = ?',concept_id, encounter.id]).first.id rescue nil
 
 			extracted_value_numerics = observation[:value_numeric]
 			if (extracted_value_numerics.class == Array)
@@ -1391,7 +1391,8 @@ class GenericEncountersController < ApplicationController
 
 			if(!observation[:parent_concept_name].blank?)
 				concept_id = Concept.find_by_name(observation[:parent_concept_name]).id rescue nil
-				observation[:obs_group_id] = Observation.find(:last, :conditions=> ['concept_id = ? AND encounter_id = ?', concept_id, encounter.id], :order => "obs_id ASC, date_created ASC").id rescue ""
+				observation[:obs_group_id] = Observation.where(['concept_id = ? AND encounter_id = ?', concept_id, encounter.id]
+        ).order("obs_id ASC, date_created ASC").last.id rescue ""
 				observation.delete(:parent_concept_name)
 			else
 				observation.delete(:parent_concept_name)

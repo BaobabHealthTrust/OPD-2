@@ -150,9 +150,10 @@
                                                                                                                                             <option link="/lab/results/<%=@patient.id -%>">Lab results</option>
             <%end%>-->
   <!--<option link='/patients/programs_dashboard/<%= @patient.id %>'>Programs</option>-->
-
-                                                                                                      <!--<option link="/encounters/new/lab_orders?patient_id=<%= @patient.id -%>" ttSize = "160px">Investigation</option>-->
-
+            <% if CoreService.get_global_property_value('show.radiology.button')%>
+                <option link="/encounters/new/radiology_exams?patient_id=<%= @patient.id -%>" ttSize = "160px">Radiology Exam</option>
+            <% end %>
+            <!--<option link="/encounters/new/lab_orders?patient_id=<%= @patient.id -%>" ttSize = "160px">Investigation</option>-->
             <option link='<%= ((session[:datetime].to_date rescue '') != '' ?
                         "/people/reset_datetime/#{@patient.id}" : "/people/set_datetime/#{@patient.id}") %>'  ttSize="160px">
               <%= ((session[:datetime].to_date rescue '') != '' ? "Reset Date" : "Set Date") %></option>

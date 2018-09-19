@@ -159,29 +159,29 @@ class GenericClinicController < ApplicationController
       @today_reg_above_14 = Patient.where(['DATEDIFF(NOW(),
        person.birthdate)/365 >= ? AND DATE(patient.date_created) =? ', 14, Date.today]).joins(:person).count
 
-      @me_ret_pt_below_14 =  Encounter.where(['encounter_type_id IN (?) AND
-       DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =?  AND
-       encounter.creator = ? AND DATEDIFF(NOW(),person.birthdate)/365 < ?',
-          EncounterType.where(['name IN (?)',@types]).map(&:encounter_type_id),
-          Date.today, Date.today,current_user.user_id,14] ).joins([:type, [:patient => :person] ]).group('patient.patient_id').count
-      #raise  @me_ret_pt_below_14.inspect
-      @me_ret_pt_above_14 =  Encounter.where(['encounter_type_id IN (?) AND
-       DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =?  AND
-       encounter.creator = ? AND DATEDIFF(NOW(),person.birthdate)/365 >= ?',
-          EncounterType.where(['name IN (?)',@types]).map(&:encounter_type_id),
-          Date.today, Date.today,current_user.user_id,14]).joins([:type, [:patient => :person]]).group('patient.patient_id').count
+      #get all returning patients
 
-      @ret_pt_below_14 =  Encounter.where(['encounter_type_id IN (?) AND
-       DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =? AND DATEDIFF(NOW(),person.birthdate)/365 < ?',
-          EncounterType.where(['name IN (?)',@types]).map(&:encounter_type_id),
-          Date.today, Date.today,14] ).group('patient.patient_id').joins([:type, [:patient => :person] ]).count
+      encounter_types = EncounterType.where(["name in (?)",@types]).map(&:encounter_type_id)
+      all_returning =  ActiveRecord::Base.connection.execute("SELECT `encounter`.creator,DATEDIFF(NOW(),person.birthdate)
+                                        FROM `encounter` INNER JOIN `encounter_type` ON `encounter_type`.`encounter_type_id` =
+                                       `encounter`.`encounter_type` AND (encounter_type.retired = 0) AND `encounter_type`.`retired` = 0
+                                        INNER JOIN `patient` ON
+                                      `patient`.`patient_id` = `encounter`.`patient_id` AND (patient.voided = 0) AND `patient`.`voided` = 0
+                                       INNER JOIN `person` ON `person`.`person_id` = `patient`.`patient_id` AND
+                                       (person.voided = 0) AND `person`.`voided` = 0
+                                       WHERE (encounter.voided = 0) AND (encounter_type_id IN (#{encounter_types.join(",")}) AND
+                                        DATE(patient.date_created) <> '#{Date.today}' AND DATE(encounter.encounter_datetime) ='#{Date.today}')
+                                       GROUP BY patient.patient_id")
 
-      @ret_pt_above_14 =  Encounter.where(
-        ['encounter_type_id IN (?) AND
-       DATE(patient.date_created) <> ? AND DATE(encounter.encounter_datetime) =? AND DATEDIFF(NOW(),person.birthdate)/365 >= ?',
-          EncounterType.find(:all, :conditions => ['name IN (?)',@types]).map(&:encounter_type_id),
-          Date.today, Date.today,14] ).joins([:type, [:patient => :person] ]).group('patient.patient_id').count
-    end
+      @me_ret_pt_below_14 =  all_returning.to_a.select{|re| re[1]/365<14 and re[0]== current_user.user_id}.count
+
+      @me_ret_pt_above_14 =  all_returning.to_a.select{|re| re[1]/365>14 and re[0]== current_user.user_id}.count
+
+      @ret_pt_below_14 =  all_returning.to_a.select{|re| re[1]/365<14}.count
+
+      @ret_pt_above_14 =  all_returning.to_a.select{|re| re[1]/365>14}.count
+
+      end
 
     @user = current_user.name  rescue "Me"
 

@@ -39,6 +39,8 @@ tstShiftPressed     = false;
 tstFormLabels       = null;
 tstSearchPage       = false;
 tstSearchPostParams = new Array();
+// default for checking if users on radiology exam page
+tst_radiology_exam = false;
 
 tstMultipleSplitChar = ";";
 
@@ -133,6 +135,12 @@ function loadTouchscreenToolkit() {
     if (window.location.href.search(/\/patient\/patient_search_names/) != -1) {
         tstSearchPage = true;
     }
+
+    // set tst_radio_exam to true if users on create radiology exam page
+    if (window.location.href.search(/\/recent_radiology_orders\?/) != -1) {
+        tst_radiology_exam = true;
+    }
+
     disableTextSelection(); // For Opera
 
     addLaunchButton();
@@ -209,7 +217,7 @@ function createInputPage(pageNumber){
 
     return inputPage;
 }
-
+    
 function createButtons() {
     var pageNumber = tstCurrentPage;
 
@@ -220,8 +228,12 @@ function createButtons() {
     // Show/Hide Captured Data
     buttonsDiv.innerHTML = "<button id='showDataButton' class='button blue navButton' onMouseDown='toggleShowProgress()'><span>Show Data</span></button>";
 
-    // create next/finish button
-    buttonsDiv.innerHTML += "<button id='nextButton' class='button green navButton' onMouseDown='gotoNextPage()'><span>Next</span></button>";
+    // create next/finish button or create view result button on recent radiology page
+    if (tst_radiology_exam) {
+        buttonsDiv.innerHTML += "<button id='viewResultButton' class='button green navButton' onMouseDown='radiology_result()'><span>View Result</span></button>";
+    } else {
+        buttonsDiv.innerHTML += "<button id='nextButton' class='button green navButton' onMouseDown='gotoNextPage()'><span>Next</span></button>";
+    }
 
     // create back button
     buttonsDiv.innerHTML += "<button id='backButton' class='button blue navButton'><span>Back</span></button>";
@@ -240,7 +252,7 @@ function createButtons() {
 
     // create div for extra buttons
     buttonsDiv.innerHTML += "<div id='tt_extraButtons'></div>";
-
+    
     // create cancel button
     buttonsDiv.innerHTML += "<button class='button navButton red' id='cancelButton' onMouseDown='confirmCancelEntry(" + (typeof(save_state) != "undefined"?"true":"") + ");'><span>Cancel</span></button>";
 
@@ -846,7 +858,7 @@ function addSummary(position){
     summaryContainer.style.border = "1px solid #000";
     summaryContainer.style.height = "255px";
     summaryContainer.style.margin = "25px";
-    summaryContainer.style.width = "97%";
+    summaryContainer.style.width = "94.5%";
     summaryContainer.style.backgroundColor = "#ccf";
     summaryContainer.style.fontSize = "1.5em";
     summaryContainer.style.marginBottom = "15px";
@@ -3692,13 +3704,12 @@ function showKeyboard(full_keyboard, qwerty){
         td5.vAlign = "middle";
         td5.style.cursor = "pointer";
         td5.bgColor = "#ffffff";
-        td5.style.minWidth = "30px";
+        td5.width = "30px";
 
         tr5.appendChild(td5);
 
         var btn = document.createElement("button");
         btn.className = "blue";
-        btn.style.width = "80%";
         btn.innerHTML = "<span>" + row5[i] + "</span>";
         btn.onclick = function(){
             if(!this.innerHTML.match(/^$/)){
@@ -3722,13 +3733,12 @@ function showKeyboard(full_keyboard, qwerty){
         td1.vAlign = "middle";
         td1.style.cursor = "pointer";
         td1.bgColor = "#ffffff";
-        td1.style.minWidth = "30px";
+        td1.width = "30px";
 
         tr1.appendChild(td1);
 
         var btn = document.createElement("button");
         btn.className = "blue";
-        btn.style.width = "80%";
         btn.innerHTML = "<span>" + row1[i] + "</span>";
         btn.onclick = function(){
             if(!this.innerHTML.match(/^$/)){
@@ -3750,13 +3760,12 @@ function showKeyboard(full_keyboard, qwerty){
         td2.vAlign = "middle";
         td2.style.cursor = "pointer";
         td2.bgColor = "#ffffff";
-        td2.style.minWidth = "30px";
+        td2.width = "30px";
 
         tr2.appendChild(td2);
 
         var btn = document.createElement("button");
         btn.className = "blue";
-        btn.style.width = "80%";
         btn.innerHTML = "<span>" + row2[i] + "</span>";
         btn.onclick = function(){
             if(!this.innerHTML.match(/^$/)){
@@ -3778,13 +3787,12 @@ function showKeyboard(full_keyboard, qwerty){
         td3.vAlign = "middle";
         td3.style.cursor = "pointer";
         td3.bgColor = "#ffffff";
-        td3.style.minWidth = "30px";
+        td3.width = "30px";
 
         tr3.appendChild(td3);
 
         var btn = document.createElement("button");
         btn.className = "blue";
-        btn.style.width = "80%";
         btn.innerHTML = "<span>" + row3[i] + "</span>";
         btn.onclick = function(){
             if(!this.innerHTML.match(/^$/)){
@@ -3806,13 +3814,12 @@ function showKeyboard(full_keyboard, qwerty){
         td6.vAlign = "middle";
         td6.style.cursor = "pointer";
         td6.bgColor = "#ffffff";
-        td6.style.minWidth = "30px";
+        td6.width = "30px";
 
         tr6.appendChild(td6);
 
         var btn = document.createElement("button");
         btn.className = "blue";
-        btn.style.width = "80%";
         btn.innerHTML = "<span>" + row6[i] + "</span>";
         btn.onclick = function(){
             if(!this.innerHTML.match(/^$/)){
@@ -3857,7 +3864,7 @@ function showKeyboard(full_keyboard, qwerty){
         btn.innerHTML = (row4[i].trim().length > 0 ? "<span>" + row4[i] + "</span>" : "");
         
         if(row4[i] == "space"){
-            btn.style.minWidth = "60%";
+            btn.style.width = "80%";
         }
         
         btn.onclick = function(){
@@ -4051,7 +4058,7 @@ function showCategory(category){
     cat.style.left = (pos[3] + (pos[0] - 378)) + "px";
     cat.style.top = (pos[2] + 5) + "px";
     cat.style.width = "350px";
-    cat.style.minHeight = "45px";
+    cat.style.height = "45px";
     cat.style.fontSize = "36px";
     cat.style.padding = "10px";
     cat.style.backgroundColor = "#9e9";
@@ -4800,10 +4807,4 @@ function deselectSection(group){
 function subtract(string){
     var result = __$("touchscreenInput" + tstCurrentPage).value.replace(string, "");
     return result
-}
-
-function hideCategory(){
-    if(__$("category")){
-        document.body.removeChild(__$("category"));
-    }
 }

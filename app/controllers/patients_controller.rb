@@ -169,6 +169,7 @@ class PatientsController < GenericPatientsController
 	def personal
 		@links = []
 		patient = Patient.find(params[:id])
+    pacs_facility = CoreService.get_global_property_value("show.radiology.button")
 
 		@links << ["Visit Summary (Print)","/patients/dashboard_print_opd_visit/#{patient.id}"]
 		@links << ["National ID (Print)","/patients/dashboard_print_national_id/#{patient.id}"]
@@ -176,7 +177,11 @@ class PatientsController < GenericPatientsController
 		@links << ["Patient past visits (View)","/patients/past_visits_summary?patient_id=#{patient.id}"]
 		@links << ["Medical History (View)","/patients/past_diagnoses?patient_id=#{patient.id}"]
     #@links << ["Investigation","/encounters/new/lab_orders?show&patient_id=#{patient.id} "]
-
+    if pacs_facility
+    @links << ["Recent Radiology Results","/patients/recent_radiology_orders?patient_id=#{patient.id}"]
+      # this link will link to XERO and auto login for you
+    @links << ["View Radiology Results","http://#{Settings[:pacs_viewer]}/?user=#{Settings[:pacs_user]}&password=#{Settings[:pacs_pw]}"]
+    end
 		if use_filing_number and not PatientService.get_patient_identifier(patient, 'Filing Number').blank?
 		  @links << ["Filing Number (Print)","/patients/print_filing_number/#{patient.id}"]
 		end
@@ -243,7 +248,7 @@ class PatientsController < GenericPatientsController
     title_font_top_bottom = {:font_reverse => false, :font_size => 4, :font_horizontal_multiplier => 1, :font_vertical_multiplier => 1}
     title_font_bottom = {:font_reverse => false, :font_size => 2, :font_horizontal_multiplier => 1, :font_vertical_multiplier => 1}
     units = {"WEIGHT"=>"kg", "HT"=>"cm"}
-    encs = patient.encounters.find(:all, :order => 'encounter_datetime ASC', :conditions =>["DATE(encounter_datetime) = ?",date])
+    encs = patient.encounters.where(["DATE(encounter_datetime) = ?",date]).order('encounter_datetime ASC')
     return nil if encs.blank?
     label.draw_multi_text("Visit: #{encs.first.encounter_datetime.strftime("%d/%b/%Y %H:%M")}" +
         " - #{encs.last.encounter_datetime.strftime("%d/%b/%Y %H:%M")}", title_font_top_bottom)

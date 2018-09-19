@@ -1,152 +1,205 @@
 production:
- encounter_privilege_map: Procedures done:Manage procedures done,Outpatient diagnosis:Manage outpatient diagnoses,Update hiv status:Manage HIV Status Visits,Vitals:Manage Vitals,Give drugs:Manage Give Drugs,Lab orders:Manage Lab Orders,Symptoms:Manage Symptoms,Social history:Manage Social History, Admit patient:Manage Patient Admissions,Discharge patient:Manage Patient Discharges,Referral:Manage referrals
- outcome_privilege_map: Admit patient:Manage Patient Admissions,Referral:Manage referrals,Patient Sent Home:Manage Patient Release
- application_diagnosis_concept: Qech outpatient diagnosis list
- application_generic_medication: OPD Medication
- use.filing.number: false
- filing.number.limit: 300
- show.patient.confirmation: false
- create_from_remote: false
- use.user.selected.activities: false
- advanced.prescription.interface: true
- auto_set_appointment: false
- is_referral_centre: true
- ipd.wards.tag: Ward
- show.enroll.in.program.button: false
- show.dispense.button: false
- logo: mw.gif
- application.name: OPD
- create.from.dde.server: false
- use.barcode.on.login: false
- zone: zone_c_west
- malaria_ip_addresses: localhost:4000, localhost:5000
- simple_application_dashboard: true
- anti_malaria_drugs:
-   Lumefantrine + Arthemether 1 x 6:
-    duration: "3"
-    frequency: "BD"
-    strength: "1.0"
-    units: tabs
-    drug_name: Lumefantrine + Arthemether 1 x 6
-    tabs: "6"
-   Lumefantrine + Arthemether 2 x 6:
-    duration: "3"
-    frequency: BD
-    strength: "2.0"
-    units: tabs
-    drug_name: Lumefantrine + Arthemether 2 x 6
-    tabs: "12"
-   Lumefantrine + Arthemether 3 x 6:
-    duration: "3"
-    frequency: BD
-    strength: "3.0"
-    units: tabs
-    drug_name: Lumefantrine + Arthemether 3 x 6
-    tabs: "18"
-   Lumefantrine + Arthemether 4 x 6:
-    duration: "3"
-    frequency: BD
-    strength: "4.0"
-    units: tabs
-    drug_name: Lumefantrine + Arthemether 4 x 6
-    tabs: "24"
-
- blood:
-  Full blood count, Malaria (mRDT), Malaria (Microscopy),  Group and Cross match, Urea and electrolytes, CD4(cluster of differentiation 4) count,
-  Viral load, Cryptococcal Antigen, Lactate, Fasting blood sugar, Random blood sugar,
-  Liver function test, Hepatitis test, sickling test,ESR(erythrocyte sedimentation rate),
-  Culture and sensitivity, Widal test,ELISA(enzyme-linked immunosorbent assay),
-  ASO(Antistreptoysin-0) titre, Rheumatoid factor, Cholesterol, Tryglicerides, Calcium,
-  Creatinine, VDRL(venereal disease research laboratory), Direct Coombs, Indirect Coombs,
-  Blood Test NOS
- csf:
-  Full CSF analysis, Indian ink, Protein and Sugar, White cell count, Culture and sensitivity
- urine:
-  Urine microscopy, Urinalysis, Culture and sensitivity
- aspirate:
-  Full aspirate analysis
- sputum:
-  AAFB (1st), AAFB (2nd), AAFB (3rd)
- stool:
-  Full stool analysis, Culture and sensitivity
- swab:
-  Microscopy, Culture and sensitivity
+  encounter_privilege_map: Procedures done:Manage procedures done,Outpatient diagnosis:Manage outpatient diagnoses,Update hiv status:Manage HIV Status Visits,Vitals:Manage Vitals,Give drugs:Manage Give Drugs,Lab orders:Manage Lab Orders,Symptoms:Manage Symptoms,Social history:Manage Social History, Admit patient:Manage Patient Admissions,Discharge patient:Manage Patient Discharges,Referral:Manage referrals
+  outcome_privilege_map: Admit patient:Manage Patient Admissions,Referral:Manage referrals,Patient Sent Home:Manage Patient Release
+  application_diagnosis_concept: Qech outpatient diagnosis list
+  application_generic_medication: OPD Medication
+  use.filing.number: false
+  filing.number.limit: 300
+  malaria.enabled.facility: false
+  show.patient.confirmation: false
+  create_from_remote: false
+  use.user.selected.activities: false
+  advanced.prescription.interface: true
+  auto_set_appointment: false
+  skip_patient_visit_histroy_page: true
+  is_referral_centre: true
+  ipd.wards.tag: Ward
+  show.enroll.in.program.button: false
+  show.dispense.button: false
+  show.radiology.button: false
+  logo: mw.gif
+  application.name: OPD
+  create.from.dde.server: false
+  ask_ancestral_details: false
+  blood:
+    Full blood count, Malaria parasite, Group and Cross match, Urea and electrolytes, CD4(cluster of differentiation 4) count,
+    Viral load, Cryptococcal Antigen, Lactate, Fasting blood sugar, Random blood sugar,
+    Liver function test, Hepatitis test, sickling test,ESR(erythrocyte sedimentation rate),
+    Culture and sensitivity, Widal test,ELISA(enzyme-linked immunosorbent assay),
+    ASO(Antistreptoysin-0) titre, Rheumatoid factor, Cholesterol, Tryglicerides, Calcium,
+    Creatinine, VDRL(venereal disease research laboratory), Direct Coombs, Indirect Coombs,
+    Blood Test NOS
+  csf:
+    Full CSF analysis, Indian ink, Protein and Sugar, White cell count, Culture and sensitivity
+  urine:
+    Urine microscopy, Urinalysis, Culture and sensitivity
+  aspirate:
+    Full aspirate analysis
+  sputum:
+    AAFB (1st), AAFB (2nd), AAFB (3rd)
+  stool:
+    Full stool analysis, Culture and sensitivity
+  swab:
+    Microscopy, Culture and sensitivity
+  chest:
+    Chest OBL, Chest Both OBL, Left Ribs, Right Ribs, Chest Lat, Sternum, Left chest Decubitus, Right chest Decubitus, Chest AP, Chest PA, Bilateral Ribs, Left chest Lat, Right chest Lat, Clavicle Left AP, Clavicle Right AP, Portable AP, Chest PA+Lat, Ribs AP, Clavicle Bil AP, Lordotic AP
+  cspine:
+    Open Mouth C1-C2 AP, Flexion+Extension, Cspine Lat, Cspine AP, Cspine Lat+OBL, Cspine AP+Lat, Neck Soft tissue AP, Both Soft tissue Lat, Cspine Both OBL
+  tspine:
+    Tspine AP+LAT, Tspine Lat, Tspine AP, Bil OBL
+  lspine:
+    Coccyx, Lspine Lat, Lspine OBL, Sacrum, Lspine AP+Lat, Extension, Lspine AP, Lspine Both OBL, Flexion
+  wrist:
+    Left wrist AP+Lat, Right wrist AP+Lat, R+L wrist AP+Lat, Wrist AP, Wrist Lat, Ulner flexion(Navicula), Rigt deviation, Carpal tunnel
+  elbow:
+    Left elbow AP+Lat, Right elbow AP+Lat, Elbow AP, R+L elbow AP+Lat, Elbow Lat
+  femur:
+    Left femur AP+Lat, Right femur AP+Lat, Femur AP, Femur Lat, Femoral Necks, Lower Femur
+  foot:
+    Left Foot(ture lat), Right Foot(ture lat), R+L Calcaneous Bone, Left Foot, Right Foot, Left Calcaneous Bone Axial+Lat, Right Calcaneous Bone Axial+Lat, Left Calcaneous Bone Axial, Right Calcaneous Bone Axial, Foot AP, R+L Foot, R+L Foot(ture lat), Foot oblique, Foot Lat
+  forearm:
+    Left forearm Ap+Lat, Right forearm Ap+Lat, R+L forearm Ap+Lat, Forearm AP, Forearm Lat
+  abdomen:
+    Supine AP, Standing AP, Standing PA, Upright, Left Abdimonal Decubitus, Right Abdimonal Decubitus
+  ankle:
+    Both ankle AP+Lat, Left ankle AP+Lat, Right ankle AP+Lat, stress AP, Ankle AP, Ankle Lat
+  hand:
+    Left hand AP+Lat, Right hand AP+Lat, R+L hand AP+Lat, Hand AP, Hand Lat, Finger AP, Finger PA, Finger LAT, Hand OBL
+  heel:
+    Hell Lat, Hell Axial
+  humerus:
+    Left humerus eAP+Lat, Right humerus AP+Lat, R+L humerus AP+Lat, Humerus AP, Humerus Lat
+  knee:
+    Left knee AP+Lat, Right knee AP+Lat, R+L knee AP+Lat, Tangang view, R+L knee AP+Lat standing, Right Pattela Sunrise view
+  kub:
+    Left kub Decubitus, Right kub Decubitus, Kub AP
+  leg:
+    Left leg AP+Lat, Right leg AP+Lat, R+L leg AP+Lat, Leg AP, Leg Lat
+  pelvis:
+    Pelvis AP, Frog view, Pelvimetry, Pelvis Lat,  Inlet, Outlet
+  shoulder:
+    Ac joints, etx, Shoulder AP, Shoulder Left AP+Lat, Right shoulder AP+Lat, Apical, int, Scapula AP+Lat, Shoulder Axial view, Clavicle(AP), R+L shoulder  AP, Left Clavile, Right Clavile
+  skull:
+    Basal view, AP View, PA View, Towne view, Left T-M joint, Right TM joint, Orbit, Skull Lat, Waters view, Nasal bone, Stenvers view, Optical Canal, Sinuses, Sella Turcica, Mastiod bone, Mandible, Left Zygomatic arch, Right Zygomatic arch, Submental vertex view (SMV), Left Lat oblique view, Right Lateral oblique view, Maxillae AP+LAT, Schulers view
+  special:
+    Intravenous urography (IVU), Urethrogram, Cystogram, Cystourethrogram, Hysterosalpingography (HSG), Barium swallow, Barium meal, Barium follow-throuh, Barium enema, Loopogram (Cologramm), Angiogram lower limb, Angiogram upper limb, Venogram
+  ftp_host:
+    192.168.3.202
+  pacs_user:
+    'xero'
+  pacs_pw:
+    'xero'
+  ftp_user_name:
+    pacs
+  ftp_pw:
+    pacs
+  pacs_viewer:
+    192.168.11.203
 
 development:
- encounter_privilege_map: Procedures done:Manage procedures done,Outpatient diagnosis:Manage outpatient diagnoses,Update hiv status:Manage HIV Status Visits,Vitals:Manage Vitals,Give drugs:Manage Give Drugs,Lab orders:Manage Lab Orders,Symptoms:Manage Symptoms,Social history:Manage Social History, Admit patient:Manage Patient Admissions,Discharge patient:Manage Patient Discharges,Referral:Manage referrals
- outcome_privilege_map: Admit patient:Manage Patient Admissions,Referral:Manage referrals,Patient Sent Home:Manage Patient Release
- application_diagnosis_concept: Qech outpatient diagnosis list
- application_generic_medication: OPD Medication
- use.filing.number: false
- filing.number.limit: 300
- show.patient.confirmation: false
- create_from_remote: false
- use.user.selected.activities: false
- advanced.prescription.interface: true
- auto_set_appointment: false
- is_referral_centre: true
- ipd.wards.tag: Ward
- show.enroll.in.program.button: false
- show.dispense.button: false
- logo: mw.gif
- application.name: OPD
- create.from.dde.server: false
- zone: zone_c_west
- use.barcode.on.login: false
- malaria_ip_addresses: localhost:4000, localhost:5000
- simple_application_dashboard: true
- anti_malaria_drugs:
-   Lumefantrine + Arthemether 1 x 6:
-    duration: "3"
-    frequency: "BD"
-    strength: "1.0"
-    units: tabs
-    drug_name: Lumefantrine + Arthemether 1 x 6
-    tabs: "6"
-   Lumefantrine + Arthemether 2 x 6:
-    duration: "3"
-    frequency: BD
-    strength: "2.0"
-    units: tabs
-    drug_name: Lumefantrine + Arthemether 2 x 6
-    tabs: "12"
-   Lumefantrine + Arthemether 3 x 6:
-    duration: "3"
-    frequency: BD
-    strength: "3.0"
-    units: tabs
-    drug_name: Lumefantrine + Arthemether 3 x 6
-    tabs: "18"
-   Lumefantrine + Arthemether 4 x 6:
-    duration: "3"
-    frequency: BD
-    strength: "4.0"
-    units: tabs
-    drug_name: Lumefantrine + Arthemether 4 x 6
-    tabs: "24"
- blood:
-  Full blood count, Malaria (mRDT), Malaria (Microscopy),  Group and Cross match, Urea and electrolytes, CD4(cluster of differentiation 4) count,
-  Viral load, Cryptococcal Antigen, Lactate, Fasting blood sugar, Random blood sugar,
-  Liver function test, Hepatitis test, sickling test,ESR(erythrocyte sedimentation rate),
-  Culture and sensitivity, Widal test,ELISA(enzyme-linked immunosorbent assay),
-  ASO(Antistreptoysin-0) titre, Rheumatoid factor, Cholesterol, Tryglicerides, Calcium,
-  Creatinine, VDRL(venereal disease research laboratory), Direct Coombs, Indirect Coombs,
-  Blood Test NOS
- csf:
-  Full CSF analysis, Indian ink, Protein and Sugar, White cell count, Culture and sensitivity
- urine:
-  Urine microscopy, Urinalysis, Culture and sensitivity
- aspirate:
-  Full aspirate analysis
- sputum:
-  AAFB (1st), AAFB (2nd), AAFB (3rd)
- stool:
-  Full stool analysis, Culture and sensitivity
- swab:
-  Microscopy, Culture and sensitivity
+  encounter_privilege_map: Procedures done:Manage procedures done,Outpatient diagnosis:Manage outpatient diagnoses,Update hiv status:Manage HIV Status Visits,Vitals:Manage Vitals,Give drugs:Manage Give Drugs,Lab orders:Manage Lab Orders,Symptoms:Manage Symptoms,Social history:Manage Social History, Admit patient:Manage Patient Admissions,Discharge patient:Manage Patient Discharges,Referral:Manage referrals
+  outcome_privilege_map: Admit patient:Manage Patient Admissions,Referral:Manage referrals,Patient Sent Home:Manage Patient Release
+  application_diagnosis_concept: Qech outpatient diagnosis list
+  application_generic_medication: OPD Medication
+  use.filing.number: false
+  filing.number.limit: 300
+  malaria.enabled.facility: false
+  show.patient.confirmation: false
+  create_from_remote: false
+  use.user.selected.activities: false
+  advanced.prescription.interface: true
+  auto_set_appointment: false
+  is_referral_centre: true
+  skip_patient_visit_histroy_page: true
+  ipd.wards.tag: Ward
+  show.enroll.in.program.button: false
+  show.dispense.button: false
+  show.radiology.button: true
+  ask_ancestral_details: false
+  logo: mw.gif
+  application.name: OPD
+  create.from.dde.server: false
+  blood:
+    Full blood count, Malaria parasite, Group and Cross match, Urea and electrolytes, CD4(cluster of differentiation 4) count,
+    Viral load, Cryptococcal Antigen, Lactate, Fasting blood sugar, Random blood sugar,
+    Liver function test, Hepatitis test, sickling test,ESR(erythrocyte sedimentation rate),
+    Culture and sensitivity, Widal test,ELISA(enzyme-linked immunosorbent assay),
+    ASO(Antistreptoysin-0) titre, Rheumatoid factor, Cholesterol, Tryglicerides, Calcium,
+    Creatinine, VDRL(venereal disease research laboratory), Direct Coombs, Indirect Coombs,
+    Blood Test NOS
+  csf:
+    Full CSF analysis, Indian ink, Protein and Sugar, White cell count, Culture and sensitivity
+  urine:
+    Urine microscopy, Urinalysis, Culture and sensitivity
+  aspirate:
+    Full aspirate analysis
+  sputum:
+    AAFB (1st), AAFB (2nd), AAFB (3rd)
+  stool:
+    Full stool analysis, Culture and sensitivity
+  swab:
+    Microscopy, Culture and sensitivity
+  # Radiology examination type for radiology exam, e.g. CR, DR etc.
+  # NOTE: this is only for development, you'll need to move all these to production.
+  # NOTE: you'll have to create more type in concept_name table(or where you store your order type name).
+  chest:
+    Chest OBL, Chest Both OBL, Left Ribs, Right Ribs, Chest Lat, Sternum, Left chest Decubitus, Right chest Decubitus, Chest AP, Chest PA, Bilateral Ribs, Left chest Lat, Right chest Lat, Clavicle Left AP, Clavicle Right AP, Portable AP, Chest PA+Lat, Ribs AP, Clavicle Bil AP, Lordotic AP
+  cspine:
+    Open Mouth C1-C2 AP, Flexion+Extension, Cspine Lat, Cspine AP, Cspine Lat+OBL, Cspine AP+Lat, Neck Soft tissue AP, Both Soft tissue Lat, Cspine Both OBL
+  tspine:
+    Tspine AP+LAT, Tspine Lat, Tspine AP, Bil OBL
+  lspine:
+    Coccyx, Lspine Lat, Lspine OBL, Sacrum, Lspine AP+Lat, Extension, Lspine AP, Lspine Both OBL, Flexion
+  wrist:
+    Left wrist AP+Lat, Right wrist AP+Lat, R+L wrist AP+Lat, Wrist AP, Wrist Lat, Ulner flexion(Navicula), Rigt deviation, Carpal tunnel
+  elbow:
+    Left elbow AP+Lat, Right elbow AP+Lat, Elbow AP, R+L elbow AP+Lat, Elbow Lat
+  femur:
+    Left femur AP+Lat, Right femur AP+Lat, Femur AP, Femur Lat, Femoral Necks, Lower Femur
+  foot:
+    Left Foot(ture lat), Right Foot(ture lat), R+L Calcaneous Bone, Left Foot, Right Foot, Left Calcaneous Bone Axial+Lat, Right Calcaneous Bone Axial+Lat, Left Calcaneous Bone Axial, Right Calcaneous Bone Axial, Foot AP, R+L Foot, R+L Foot(ture lat), Foot oblique, Foot Lat
+  forearm:
+    Left forearm Ap+Lat, Right forearm Ap+Lat, R+L forearm Ap+Lat, Forearm AP, Forearm Lat
+  abdomen:
+    Supine AP, Standing AP, Standing PA, Upright, Left Abdimonal Decubitus, Right Abdimonal Decubitus
+  ankle:
+    Both ankle AP+Lat, Left ankle AP+Lat, Right ankle AP+Lat, stress AP, Ankle AP, Ankle Lat
+  hand:
+    Left hand AP+Lat, Right hand AP+Lat, R+L hand AP+Lat, Hand AP, Hand Lat, Finger AP, Finger PA, Finger LAT, Hand OBL
+  heel:
+    Hell Lat, Hell Axial
+  humerus:
+    Left humerus eAP+Lat, Right humerus AP+Lat, R+L humerus AP+Lat, Humerus AP, Humerus Lat
+  knee:
+    Left knee AP+Lat, Right knee AP+Lat, R+L knee AP+Lat, Tangang view, R+L knee AP+Lat standing, Right Pattela Sunrise view
+  kub:
+    Left kub Decubitus, Right kub Decubitus, Kub AP
+  leg:
+    Left leg AP+Lat, Right leg AP+Lat, R+L leg AP+Lat, Leg AP, Leg Lat
+  pelvis:
+    Pelvis AP, Frog view, Pelvimetry, Pelvis Lat,  Inlet, Outlet
+  shoulder:
+    Ac joints, etx, Shoulder AP, Shoulder Left AP+Lat, Right shoulder AP+Lat, Apical, int, Scapula AP+Lat, Shoulder Axial view, Clavicle(AP), R+L shoulder  AP, Left Clavile, Right Clavile
+  skull:
+    Basal view, AP View, PA View, Towne view, Left T-M joint, Right TM joint, Orbit, Skull Lat, Waters view, Nasal bone, Stenvers view, Optical Canal, Sinuses, Sella Turcica, Mastiod bone, Mandible, Left Zygomatic arch, Right Zygomatic arch, Submental vertex view (SMV), Left Lat oblique view, Right Lateral oblique view, Maxillae AP+LAT, Schulers view
+  special:
+    Intravenous urography (IVU), Urethrogram, Cystogram, Cystourethrogram, Hysterosalpingography (HSG), Barium swallow, Barium meal, Barium follow-throuh, Barium enema, Lupogram (Cologramm), Angiogram lower limb, Angiogram upper limb
+  ftp_host:
+    192.168.3.202
+  pacs_user:
+    'xero'
+  pacs_pw:
+    'xero'
+  ftp_user_name:
+    pacs
+  ftp_pw:
+    pacs
+  pacs_viewer:
+    192.168.11.203
+
 test: &TEST
- create_from_remote: no
- use.user.selected.activities: yes
+  create_from_remote: no
+  use.user.selected.activities: yes
 
 cucumber:
   <<: *TEST

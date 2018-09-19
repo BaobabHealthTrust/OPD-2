@@ -1,4 +1,5 @@
 require "dashboard_service.rb"
+require "net/ftp"
 class EncountersController < GenericEncountersController
 
 	#call method to send data to dashboard application after_filter
@@ -194,7 +195,32 @@ class EncountersController < GenericEncountersController
       @sputum = CoreService.get_global_property_value('sputum').split(',') rescue nil
       @stool = CoreService.get_global_property_value('stool').split(',') rescue nil
       @swab = CoreService.get_global_property_value('swab').split(',') rescue nil
-    end
+		end
+		# Find body part for radiology exam, and create them as options for creating orders
+		# NOTE: need to add more part for radiology examination(maybe)
+		if (params[:encounter_type]) == 'radiology_exams'
+			@chest = CoreService.get_global_property_value('chest').split(',') rescue nil
+			@cspine = CoreService.get_global_property_value('cspine').split(',') rescue nil
+			@wrist = CoreService.get_global_property_value('wrist').split(',') rescue nil
+			@elbow = CoreService.get_global_property_value('elbow').split(',') rescue nil
+			@femur = CoreService.get_global_property_value('femur').split(',') rescue nil
+			@foot = CoreService.get_global_property_value('foot').split(',') rescue nil
+			@forearm = CoreService.get_global_property_value('forearm').split(',') rescue nil
+			@abdomen = CoreService.get_global_property_value('abdomen').split(',') rescue nil
+			@ankle = CoreService.get_global_property_value('ankle').split(',') rescue nil
+			@hand = CoreService.get_global_property_value('hand').split(',') rescue nil
+			@heel = CoreService.get_global_property_value('heel').split(',') rescue nil
+			@tspine = CoreService.get_global_property_value('tspine').split(',') rescue nil
+			@humerus = CoreService.get_global_property_value('humerus').split(',') rescue nil
+			@knee = CoreService.get_global_property_value('knee').split(',') rescue nil
+			@kub = CoreService.get_global_property_value('kub').split(',') rescue nil
+			@leg = CoreService.get_global_property_value('leg').split(',') rescue nil
+			@lspine = CoreService.get_global_property_value('lspine').split(',') rescue nil
+			@pelvis = CoreService.get_global_property_value('pelvis').split(',') rescue nil
+			@shoulder = CoreService.get_global_property_value('shoulder').split(',') rescue nil
+			@skull = CoreService.get_global_property_value('skull').split(',') rescue nil
+			@special = CoreService.get_global_property_value('special').split(',') rescue nil
+		end
 
 		if (params[:encounter_type].upcase rescue '') == "ADMIT_PATIENT"
 			ipd_wards_tag = CoreService.get_global_property_value('ipd.wards.tag')
@@ -498,7 +524,7 @@ class EncountersController < GenericEncountersController
 
 			if(observation[:parent_concept_name])
 				concept_id = Concept.find_by_name(observation[:parent_concept_name]).id rescue nil
-				observation[:obs_group_id] = Observation.find(:first, :conditions=> ['concept_id = ? AND encounter_id = ?',concept_id, encounter.id]).id rescue ""
+				observation[:obs_group_id] = Observation.where(['concept_id = ? AND encounter_id = ?',concept_id, encounter.id]).first.id rescue ""
 				observation.delete(:parent_concept_name)
 			end
 
@@ -783,5 +809,75 @@ class EncountersController < GenericEncountersController
     else
       redirect_to next_task(@patient) and return
     end
-  end
+	end
+
+	def create_radiology_exam
+		#raise "#{params[:radio_exams]}"
+		(params[:radio_exams] || []).each do |order|
+			if order.blank? == false
+				Encounter.create do |e|
+					e.encounter_type = EncounterType.find_by_name("RADIOLOGY EXAMINATION").id
+					e.patient_id = params['encounter']['patient_id']
+					e.encounter_datetime = session[:datetime]
+					if params[:filter] and !params[:filter][:provider].blank?
+						user_person_id = User.find_by_username(params[:filter][:provider]).person_id
+					else
+						user_person_id = User.find_by_user_id(current_user.id).person_id
+					end rescue user_person_id = current_user.person.person_id
+					e.provider_id = user_person_id
+					test_time = session[:datetime]
+				end
+
+				encounter_id = Encounter.last.id
+
+				multiple = order.match(/[:]/)
+				multiple_array = order.split(":")
+				#raise "#{multiple_array[1]}"
+				unless multiple.nil?
+					parent_obs = {
+							"encounter_id" => "#{encounter_id}",
+							"patient_id" => params['encounter']['patient_id'],
+							"concept_name" => "Radiology",
+							"value_coded_or_text" => multiple_array[0],
+							"obs_datetime" => params['encounter']['encounter_datetime']
+					}
+
+					parent_obs = Observation.create(parent_obs)
+					obs_group = Observation.where(["encounter_id =? AND concept_id =?",
+																											 encounter_id, parent_obs.concept_id]).order("obs_id DESC").first
+					obs_group_id = obs_group.id if obs_group
+					child_obs = {
+							"encounter_id" => "#{encounter_id}",
+							"patient_id" => params['encounter']['patient_id'],
+							"concept_name" => multiple_array[0],
+							"accession_number" => Observation.new_accession_number,
+							"value_coded_or_text" => multiple_array[1],
+							"obs_group_id" => "#{obs_group_id}",
+							"obs_datetime" => params['encounter']['encounter_datetime']
+					}
+					Observation.create(child_obs)
+				else
+					obs = {
+							"encounter_id" => "#{encounter.id}",
+							"patient_id" => params['encounter']['patient_id'],
+							"concept_name" => "Radiology",
+							"accession_number" => Observation.new_accession_number,
+							"value_coded_or_text" => order,
+							"obs_datetime" => params['encounter']['encounter_datetime']
+					}
+					Observation.create(obs)
+				end
+			end
+
+
+			# getting data for creating msi file.
+			@patient_id = params[:encounter][:patient_id]
+			patient = Patient.find(@patient_id).person
+			patient_info = PatientService.get_patient(patient)
+			unless multiple_array.nil?
+				Encounter.generate_msi(@patient_id, patient, patient_info, current_user, multiple_array[1].gsub(' ', '_'))
+			end
+		end
+		redirect_to"/patients/print_radio_orders/?patient_id=#{@patient_id}"
+	end
 end

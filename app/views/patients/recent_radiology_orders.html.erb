@@ -1,0 +1,36 @@
+<script>
+	var tt_cancel_destination = "/patients/show/<%=@patient_id%>"
+   	var pacs_user = "<%= Settings[:pacs_user] %>";
+   	window.pacs_pw = "<%= Settings[:pacs_pw] %>";
+	 var ip = "<%= Settings[:pacs_viewer] %>";
+
+  // get selected oders id for finding result in XERO
+
+  function radiology_result() {
+
+      var radiology_options = document.getElementsByTagName('img');
+      var tt = '';
+      var accession_number = []
+      for (i = 0; i < radiology_options.length; i++) {
+          var selected_orders = radiology_options[i].getAttribute('src');
+          if (selected_orders.contains('/touchscreentoolkit/lib/images/ticked.jpg')) {
+              accession_number.push(radiology_options[i].parentNode.parentNode.parentNode.parentNode.getAttribute('tstvalue'))
+          }
+      }
+      // use XERO API to auto login to their web app and search for selected order's result
+			var path = 'http://'+ip+'?user='+ pacs_user + '&password=' + pacs_pw + '&AccessionNumber=' + accession_number.join("\\");
+      location.href = path;
+  }
+</script>
+
+<style>
+  #tt_page_select_activities .options { height: 506px; }
+</style>
+
+<form method = 'post' action = "/patients/recent_radiology_orders">
+	<%= hidden_field_tag "patient_id", @patient_id %>
+  <%= select_tag 'radio_exams[]',
+      options_for_select(@radiology_orders),
+      :helpText => "Select order for results(multiple)" ,
+      :multiple =>  true %> 
+</form>

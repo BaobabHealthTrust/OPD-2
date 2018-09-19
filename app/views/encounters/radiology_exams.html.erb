@@ -1,0 +1,166 @@
+<script type="text/javascript" language="javascript">
+  var tt_cancel_destination = "/patients/show?patient_id=<%= @patient.patient_id %>"
+  //var tt_cancel_destination = "/patients/investigations_dashboard/<%= @patient.patient_id %>"
+</script>
+<style type="text/css" media="screen">
+  #space { display:inline; font-size:1.2em; }
+  form{
+    display: block!important;
+}
+</style>
+
+  <form id='radio_exam' action="/encounters/create_radiology_exam" method='post'>
+    <% default={
+      :allowFreeText => 'false',
+    } %>
+
+    <%= hidden_field_tag "encounter[encounter_type_name]", "RADIOLOGY EXAMINATION" %>
+    <%= hidden_field_tag "encounter[patient_id]", @patient.id %>
+    <%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
+    <%= hidden_field_tag "encounter[provider_id]", current_user.person_id %>
+
+    <%= hidden_field_tag "patient_identifier[patient_id]", @patient.id %>
+    <%= hidden_field_tag "patient_identifier[identifier_type_name]", "Radiology Study Number" %>
+    <!-- hidden_field_tag "patient_identifier[lab_id]", "LAB" -->
+
+    <select style="width: 100%" id="multiple" class="multi" name="radio_exams[]" helptext="Select Radiology orders" multiple="multiple" nested="true">
+          <option></option>
+
+          <!-- this is where you add your radiology exam options -->
+          <optgroup id="chest_xray" label="Chest">
+            <% @chest.each do |chest| %>
+              <option id="<%=chest.squish%>" value="Chest x-ray:<%= chest.squish %> chest"><%= chest.squish %> Chest x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="cspine_xray" label="C-Spine">
+            <% @cspine.each do |cspine| %>
+              <option id="<%=cspine.squish%>" value="C-Spine x-ray:<%= cspine.squish %> cspine"><%= cspine.squish %> C-Spine</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="wrist_xray" label="Wrist">
+            <% @wrist.each do |wrist| %>
+              <option id="<%=wrist.squish%>" value="Wrist x-ray:<%= wrist.squish %> wrist"><%= wrist.squish %> Wrist x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="elbow_xray" label="Elbow">
+            <% @elbow.each do |elbow| %>
+              <option id="<%=elbow.squish%>" value="Elbow x-ray:<%= elbow.squish %> elbow"><%= elbow.squish %> Elbow x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="femur_xray" label="Femur">
+            <% @femur.each do |femur| %>
+              <option id="<%=femur.squish%>" value="Femur x-ray:<%= femur.squish %> femur"><%= femur.squish %> Femur x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="foot_xray" label="Foot">
+            <% @foot.each do |foot| %>
+              <option id="<%=foot.squish%>" value="Foot x-ray:<%= foot.squish %> foot"><%= foot.squish %> Foot x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="forearm_xray" label="Forearm">
+            <% @forearm.each do |forearm| %>
+              <option id="<%=forearm.squish%>" value="Forearm x-ray:<%= forearm.squish %> forearm"><%= forearm.squish %> Forearm x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="abdomen_xray" label="Abdomen">
+            <% @abdomen.each do |abdomen| %>
+              <option id="<%=abdomen.squish%>" value="Abdomen x-ray:<%= abdomen.squish %> abdomen"><%= abdomen.squish %> Abdomen x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="ankle_xray" label="Ankle">
+            <% @ankle.each do |ankle| %>
+              <option id="<%=ankle.squish%>" value="Ankle x-ray:<%= ankle.squish %> ankle"><%= ankle.squish %> Ankle x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="hand_xray" label="Hand">
+            <% @hand.each do |hand| %>
+              <option id="<%=hand.squish%>" value="Hand x-ray:<%= hand.squish %> hand"><%= hand.squish %> Hand x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="heel_xray" label="Heel">
+            <% @heel.each do |heel| %>
+              <option id="<%=heel.squish%>" value="Heel x-ray:<%= heel.squish %> heel"><%= heel.squish %> Heel x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="tspine_xray" label="T-Spine">
+            <% @tspine.each do |tspine| %>
+              <option id="<%=tspine.squish%>" value="T-Spine x-ray:<%= tspine.squish %> tspine"><%= tspine.squish %> T-Spine x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="humerus_xray" label="Humerus">
+            <% @humerus.each do |humerus| %>
+              <option id="<%=humerus.squish%>" value="Humerus x-ray:<%= humerus.squish %> humerus"><%= humerus.squish %> Humerus x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="knee_xray" label="Knee">
+            <% @knee.each do |knee| %>
+              <option id="<%=knee.squish%>" value="Knee x-ray:<%= knee.squish %> knee"><%= knee.squish %> Knee x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="kub_xray" label="KUB">
+            <% @kub.each do |kub| %>
+              <option id="<%=kub.squish%>" value="KUB x-ray:<%= kub.squish %> kub"><%= kub.squish %> KUB x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="leg_xray" label="Leg">
+            <% @leg.each do |leg| %>
+              <option id="<%=leg.squish%>" value="Leg x-ray:<%= leg.squish %> leg"><%= leg.squish %> Leg x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="lspine_xray" label="L-Spine">
+            <% @lspine.each do |lspine| %>
+              <option id="<%=lspine.squish%>" value="L-Spine x-ray:<%= lspine.squish %> lspine"><%= lspine.squish %> L-Spine x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="pelvis_xray" label="Pelvis">
+            <% @pelvis.each do |pelvis| %>
+              <option id="<%=pelvis.squish%>" value="Pelvis x-ray:<%= pelvis.squish %> pelvis"><%= pelvis.squish %> Pelvis x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="shoulder_xray" label="Shoulder">
+            <% @shoulder.each do |shoulder| %>
+              <option id="<%=shoulder.squish%>" value="Shoulder x-ray:<%= shoulder.squish %> shoulder"><%= shoulder.squish %> Shoulder x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="skull_xray" label="Skull">
+            <% @skull.each do |skull| %>
+              <option id="<%=skull.squish%>" value="Skull x-ray:<%= skull.squish %> skull"><%= skull.squish %> Skull x-ray</option>
+            <% end %>
+          </optgroup>
+
+          <optgroup id="special_xray" label="Special">
+            <% @special.each do |special| %>
+              <option id="<%=special.squish%>" value="Special x-ray:<%= special.squish %>"><%= special.squish %></option>
+          <% end %>
+         </optgroup>
+
+        </select>
+    
+    <% if @retrospective %>
+            <p><label for="filter_provider">Staff who provided the information (Provider)</label></br>
+            <%= text_field "filter" , 'provider', :helpText => 'Staff who provided the information (Provider)', :ajaxURL => '/user/username?username=' %></p>
+    <% else %>
+            <%= hidden_field_tag "filter[provider]", nil %>
+    <% end %>
+
+    <%= submit_tag "Finish" %>
+  </form>
