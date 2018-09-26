@@ -49,8 +49,8 @@ mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/create_dde_server_con
 mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/underlined_diseases_concept_metadata.sql
 
 
-#mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/privilege.sql
-#mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/bart2_role_privileges.sql
+mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/underlined_diseases_concept_metadata.sql
+mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/eidsr_concepts_with_symptom_syndrome_sets.sql
 mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/migrate/create_weight_height_for_ages.sql
 mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/migrate/insert_weight_for_ages.sql
 #mysql --user=$USERNAME --password=$PASSWORD $DATABASE < db/regimens.sql
