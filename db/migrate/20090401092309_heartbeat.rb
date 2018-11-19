@@ -1,4 +1,4 @@
-class Heartbeat < ActiveRecord::Migration
+class Heartbeat < ActiveRecord::Migration[4.2]
   def self.up
     create_table :heart_beat do |t|
       t.column :ip, :string, :limit => 20

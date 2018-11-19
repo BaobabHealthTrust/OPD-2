@@ -1,4 +1,4 @@
-class ChangeTemperatureColumnDecimalPrecision < ActiveRecord::Migration
+class ChangeTemperatureColumnDecimalPrecision < ActiveRecord::Migration[4.2]
   def self.up
     change_column :temperature_records, :temperature, :decimal, :precision => 5, :scale => 2
   end

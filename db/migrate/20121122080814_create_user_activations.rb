@@ -1,4 +1,4 @@
-class CreateUserActivations < ActiveRecord::Migration
+class CreateUserActivations < ActiveRecord::Migration[4.2]
   def self.up
     create_table :user_activations do |t|
 

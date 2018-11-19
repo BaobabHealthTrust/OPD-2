@@ -1,4 +1,4 @@
-class CreateLocationTagWorkstationLocation < ActiveRecord::Migration
+class CreateLocationTagWorkstationLocation < ActiveRecord::Migration[4.2]
   def self.up
 =begin
       execute "INSERT INTO `location_tag` (`name`, `description`, `creator`, `date_created`, `retired`, `retired_by`, `date_retired`, `retire_reason`, `uuid`)

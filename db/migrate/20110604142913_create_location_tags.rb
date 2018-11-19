@@ -1,4 +1,4 @@
-class CreateLocationTags < ActiveRecord::Migration
+class CreateLocationTags < ActiveRecord::Migration[4.2]
   def self.up
     create_table :location_tags do |t|
 

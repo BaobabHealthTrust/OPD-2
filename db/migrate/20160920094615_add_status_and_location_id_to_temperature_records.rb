@@ -1,4 +1,4 @@
-class AddStatusAndLocationIdToTemperatureRecords < ActiveRecord::Migration
+class AddStatusAndLocationIdToTemperatureRecords < ActiveRecord::Migration[4.2]
   def self.up
     add_column :temperature_records, :status, :string,:after => :temperature,
                :limit => 10

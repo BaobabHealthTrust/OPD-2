@@ -1,4 +1,4 @@
-class CreateProgramEncounters < ActiveRecord::Migration
+class CreateProgramEncounters < ActiveRecord::Migration[4.2]
   def self.up
     create_table :program_encounters, :primary_key => :program_encounter_id do |t|
       t.integer :encounter_id

@@ -1,4 +1,4 @@
-class CreateLabs < ActiveRecord::Migration
+class CreateLabs < ActiveRecord::Migration[4.2]
   def self.up
     create_table :labs do |t|
 

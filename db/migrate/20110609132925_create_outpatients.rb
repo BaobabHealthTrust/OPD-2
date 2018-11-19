@@ -1,4 +1,4 @@
-class CreateOutpatients < ActiveRecord::Migration
+class CreateOutpatients < ActiveRecord::Migration[4.2]
   def self.up
     create_table :outpatients do |t|
 

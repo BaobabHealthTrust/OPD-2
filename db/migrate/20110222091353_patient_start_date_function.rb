@@ -1,4 +1,4 @@
-class PatientStartDateFunction < ActiveRecord::Migration
+class PatientStartDateFunction < ActiveRecord::Migration[4.2]
   def self.up
     ActiveRecord::Base.connection.execute <<EOF
 DROP FUNCTION IF EXISTS patient_start_date;

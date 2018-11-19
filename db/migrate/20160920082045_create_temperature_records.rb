@@ -1,4 +1,4 @@
-class CreateTemperatureRecords < ActiveRecord::Migration
+class CreateTemperatureRecords < ActiveRecord::Migration[4.2]
   def self.up
     create_table :temperature_records do |t|
       t.column :patient_identifier, :string, :limit => 35

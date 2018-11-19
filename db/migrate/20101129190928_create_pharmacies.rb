@@ -1,4 +1,4 @@
-class CreatePharmacies < ActiveRecord::Migration
+class CreatePharmacies < ActiveRecord::Migration[4.2]
   def self.up
     create_table :pharmacies do |t|
 
