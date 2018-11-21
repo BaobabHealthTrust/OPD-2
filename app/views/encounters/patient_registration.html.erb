@@ -1,15 +1,16 @@
 <%= javascript_include_tag "/javascripts/date" %>
-<script>
+<script type="text/javascript">
     var tt_cancel_destination = "/patients/show/<%= @patient.patient_id -%>";
     <% @session_date = "#{session[:datetime].to_date rescue Date.today}" %>
     <% @todayDate = @session_date.to_date  %>
     <% @alert_date = @session_date.to_date - 90.days %>
-    var ageInMonths = '<%= @patient_bean.age_in_months %>'
+    var ageInMonths = '<%= @patient_bean.age_in_months %>';
+    var patientGender = "<%= @patient_bean.sex.upcase %>";
 
     function checkTestDate() {
         var dateCheck = "";
-        var currentYear = '<%= @todayDate.year %>'
-        var currentMonth = '<%= @todayDate.month %>'
+        var currentYear = '<%= @todayDate.year %>';
+        var currentMonth = '<%= @todayDate.month %>';
         var testDate = new Date($('hiv_test_year').value, $('hiv_test_month').value - 1, $('hiv_test_day').value);
         <% @session_date = "#{session[:datetime]} rescue #{Date.today}" %>
         var years = testDate.getFullYear();
@@ -22,9 +23,9 @@
         var todayDate = new Date(sessionDate);
 
         if ((total > ageInMonths) || (testDate > todayDate)) {
-            dateCheck = false
+            dateCheck = false;
         } else {
-            dateCheck = true
+            dateCheck = true;
         }
         return dateCheck
     }
@@ -40,9 +41,9 @@
         var todayDate = new Date(sessionDate);
 
         if (todayDate > testDate) {
-            showNegativeTestReminder = true
+            showNegativeTestReminder = true;
         } else {
-            showNegativeTestReminder = false
+            showNegativeTestReminder = false;
         }
         return showNegativeTestReminder
     }
@@ -68,11 +69,11 @@
         var todayDate = new Date(sessionDate);
 
         if (todayDate > testDate) {
-            showNegativeTestReminder = true
+            showNegativeTestReminder = true;
         } else {
-            showNegativeTestReminder = false
+            showNegativeTestReminder = false;
         }
-        return showNegativeTestReminder
+        return showNegativeTestReminder;
     }
 
     function isTestOverDue(testDate, alertDate) {
@@ -84,35 +85,36 @@
     }
 
     function createDate(year, month, day) {
-        date_str = year
+        date_str = year;
 
         if (month.length == 1)
-            month = '0' + month
+            month = '0' + month;
 
-        date_str += '-' + month
+        date_str += '-' + month;
 
         if (day.length == 1)
-            day = '0' + day
+            day = '0' + day;
 
-        date_str += '-' + day
+        date_str += '-' + day;
 
         intyear = 0;
         intmonth = 0;
         intday = 0;
-        intyear = parseInt(date_str.substring(0, 4))
-        intmonth = (parseInt(date_str.substring(5, 7)) - 1)
-        intday = (parseInt(date_str.substring(8, 10)))
+        intyear = parseInt(date_str.substring(0, 4));
+        intmonth = (parseInt(date_str.substring(5, 7)) - 1);
+        intday = (parseInt(date_str.substring(8, 10)));
 
         if (intmonth == -1)
-            intmonth = (parseInt(date_str.substring(5, 7).substring(1, 2)) - 1)
+            intmonth = (parseInt(date_str.substring(5, 7).substring(1, 2)) - 1);
 
         if (intday == 0)
-            intday = parseInt(date_str.substring(8, 10).substring(1, 2))
+            intday = parseInt(date_str.substring(8, 10).substring(1, 2));
 
         return new Date(intyear, intmonth, intday);
     }
 
 </script>
+
 <style>
   .tt_controls_hiv_test_year #char {
     display: none;
@@ -183,17 +185,20 @@
       :helpText => "Does the patient have National ID"
   } %>
 
-  <%= text_field_tag "national_id", nil, {:helpText => 'National ID'} %>
+  <%= text_field_tag "national_id", nil, {
+      :condition => '$("npid").value.match(/YES/i)',
+      :helpText => 'National ID'
+  } %>
 
   <%= (touch_select_tag "IS PATIENT PREGNANT?", @patient, options_for_select(pregnancy_options),
                         {
                             :id => "pregnant",
+                            :condition => "patientGender == 'FEMALE'",
                             :helpText => "Is the patient pregnant?"
                         }).html_safe %>
 
   <%= (touch_select_tag "HIV STATUS", @patient, options_for_select(hiv_status_options),
                         {:id => "hiv_status",
-                         :multiple => false,
                          :tt_pageStyleClass => "NoKeyboard",
                          :helpText => "HIV Status"
                         }).html_safe %>
@@ -206,13 +211,14 @@
                          :min => "1982",
                          :absoluteMax => Date.today.year,
                          :tt_pageStyleClass => "Numeric NumbersOnly",
-                         :condition => '$("hiv_status").value != "UNKNOWN"'}
+                         :condition => '!($("hiv_status").value.match(/NEVER TESTED/i))'
+                     }
   %>
 
   <%= select_tag "hiv_test_month", month_name_options,
                  {
                      :helpText => 'HIV test month',
-                     :condition => '($("hiv_test_year").value.toLowerCase() != "unknown") && ($("hiv_status").value != "UNKNOWN")',
+                     :condition => '($("hiv_test_year").value.toLowerCase() != "unknown") && !($("hiv_status").value.match(/NEVER TESTED/i))',
                      :tt_onLoad => "__$('keyboard').style.display = 'none'"
                  } %>
 
@@ -221,7 +227,7 @@
                       :helpText => 'HIV test day',
                       :validationCode => "checkTestDate()",
                       :validationMessage => "HIV test date greater than #{session[:datetime].to_date rescue Date.today.to_date}",
-                      :condition => '($("hiv_test_year").value != "Unknown") && ($("hiv_test_month").value != "Unknown") && ($("hiv_status").value != "UNKNOWN")',
+                      :condition => '($("hiv_test_year").value != "Unknown") && ($("hiv_test_month").value != "Unknown") && !($("hiv_status").value.match(/NEVER TESTED/i))',
                       :tt_onLoad => "getDayOfMonthPicker($('hiv_test_year').value,$('hiv_test_month').value);",
                       :tt_onUnload => "updateTestDate();"
                      } %>
