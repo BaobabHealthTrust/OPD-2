@@ -1740,7 +1740,7 @@ EOF
     guardian_name rescue nil
   end
 
-  def self.name(person)
+  def self.person_name(person)
     "#{person.names.first.given_name} #{person.names.first.family_name}".titleize rescue nil
   end
   
