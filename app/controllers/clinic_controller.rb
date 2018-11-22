@@ -128,7 +128,8 @@ class ClinicController < GenericClinicController
       ["Is this a Referral Facility?", "/properties/creation?value=referral_facility"],
       ["DDE Properties", "/properties/dde_properties_menu"],
       ["Enable Portal", "/properties/portal_properties_menu"],
-      ["Activate IDSR Feature", "/properties/creation?value=activate_idsr_feature"]
+      ["Activate IDSR Feature", "/properties/creation?value=activate_idsr_feature"],
+      ["Activate Ancestral Residence", "/properties/creation?value=ask_ancestral_details"]
     ]
     render :layout => false
   end

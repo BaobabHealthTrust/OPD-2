@@ -107,7 +107,7 @@ class ApplicationController < GenericApplicationController
 			task.url = "/encounters/new/outpatient_reception?patient_id=#{patient.id}"
 		end if referral_facility #Only do this if it is a referral facility
 
-    if !is_encounter_available(patient, 'PATIENT REGISTRATION', session_date)
+    if !is_encounter_available(patient, 'REGISTRATION', session_date)
       task.encounter_type = 'PATIENT REGISTRATION'
       task.url = "/encounters/new/patient_registration?patient_id=#{patient.id}"
     end
