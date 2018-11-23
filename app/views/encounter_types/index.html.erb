@@ -1,20 +1,46 @@
 <style>
 
-.tt_controls_select_task .keyboard { display: none !important; }
+  .tt_controls_select_task .keyboard { display: none !important; }
 
-#tt_page_select_task .inputFrameClass {
-  height: 480px;
-}
+  #tt_page_select_task .inputFrameClass {
+    height: 480px;
+  }
 
-#tt_page_select_task .options {
-  height: 17em;
-}
+  #tt_page_select_task .options {
+    height: 17em;
+  }
 
 </style>
 
 
 <script>
-  var tt_cancel_destination = "/patients/show/<%= params[:patient_id] %>"
+  
+    var tt_cancel_destination = "/patients/show/<%= params[:patient_id] %>"
+
+    function gotoAdmissionEncounter(){
+        __$('nextButton').onmousedown = function(){
+            var selected_value = $('touchscreenInput' + tstCurrentPage).value;
+            if (selected_value.match(/ADMIT/i)){
+                window.location = "/encounters/new/admit_patient?patient_id=<%= params[:patient_id] %>"
+            }
+            if (selected_value.match(/REFERRAL/i)){
+                gotoNextPage();
+            }
+        }
+    }
+
+    function gotoReferralEncounter(){
+        __$('nextButton').onmousedown = function(){
+            var selected_value = $('touchscreenInput' + tstCurrentPage).value;
+            if (selected_value.match(/INTERNAL REFERRAL/i)){
+                window.location = "/encounters/new/referral?patient_id=<%= params[:patient_id] %>&referral=Internal Referral"
+            }
+            if (selected_value.match(/HOSPITAL/i)){
+                window.location = "/encounters/new/referral?patient_id=<%= params[:patient_id] %>&referral=Refer to another hospital"
+            }
+        }
+    }
+
 </script>
 
 <form action="/encounter_types/show">
@@ -22,7 +48,7 @@
   <%= hidden_field_tag "patient_id", params[:patient_id] %>
 
   <label for="encounter_type">Select Task</label>
-  <select name="encounter_type" id="encounter_type">
+  <select name="encounter_type" id="encounter_type" tt_onLoad = "gotoAdmissionEncounter();">
     <% @available_encounter_types.each do |encounter_type| %>
       <% if encounter_type.upcase.include?('HIV') %>
         <option><%= encounter_type.gsub('Hiv','HIV').gsub('Tb','TB').gsub('hiv','HIV') %></option>
@@ -32,13 +58,14 @@
     <% end %>
   </select>
 
-  <% referral_type = ['Internal Referral','External Referral']  %>
+  <% referral_type = ['Internal Referral','Refer to another hospital']  %>
   <%= select_tag 'referral', options_for_select(referral_type),
-      {:id => 'initial_state',
-       :field_type => 'alpha',
-       :helpText => "Select Referral Type",
-       :tt_pageStyleClass => "NoKeyboard",
-       :condition => "document.getElementById('encounter_type').value.match(/REFERRAL/i)",
-       :allowFreeText => false } %>
+                 {:id => 'initial_state',
+                  :field_type => 'alpha',
+                  :helpText => "Select Referral Type",
+                  :tt_pageStyleClass => "NoKeyboard",
+                  :tt_onLoad => "gotoReferralEncounter();",
+                  :condition => "document.getElementById('encounter_type').value.match(/REFERRAL/i)",
+                  :allowFreeText => false } %>
   <%= submit_tag "Finish" %>
 </form>

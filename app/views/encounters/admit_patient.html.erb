@@ -14,9 +14,9 @@
 	<%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
 	<%= hidden_field_tag "encounter[provider_id]", current_user.person_id %>
 
-	<%= touch_select_tag "ADMIT TO WARD", @patient, options_for_select(@ipd_wards),
+	<%= (touch_select_tag "ADMIT TO WARD", @patient, options_for_select(@ipd_wards),
 		{	:helpText => "Admit to ward",
-			:tt_requireNextClick => "true" } %>
+			:tt_requireNextClick => "true" }).html_safe %>
 
 	<% program_id = Program.find_by_name('IPD PROGRAM').id %>
 	<% patient_program_id = @patient.patient_programs.local.select{|p| p.program_id == program_id }.last.patient_program_id rescue nil %>

@@ -2,6 +2,7 @@ class EncounterTypesController < GenericEncounterTypesController
 
   def index
   #raise current_user_roles.to_yaml
+    @patient = Patient.find(params[:patient_id])
     role_privileges = RolePrivilege.where(["role IN (?)", current_user_roles])
     privileges = role_privileges.each.map{ |role_privilege_pair| role_privilege_pair["privilege"].humanize }
 
