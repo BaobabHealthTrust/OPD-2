@@ -82,10 +82,11 @@
           <!--%  if @patient_bean.age.to_i < 14%-->
           <!--option value='/encounters/new/triage_paeds?patient_id=<!--%= @patient.id %>'>Triage</option>
           <!--% else  %-->
-          <%  if @nurse  %>
-            <option value='/encounters/new/vitals?patient_id=<%= @patient.id %>'>Triage</option>
+          <% if @show_triage_button == "true" %>
+                <%  if @nurse  %>
+                  <option value='/encounters/new/vitals?patient_id=<%= @patient.id %>'>Triage</option>
+                <% end %>
           <% end %>
-
           <% if  session[:datetime].blank? %>
               <!--<option value='/encounters/idsr_complaints?patient_id=<%= @patient.id %>'>Presenting Complaints</option>-->
             <% if @point_of_care == 'true' %>

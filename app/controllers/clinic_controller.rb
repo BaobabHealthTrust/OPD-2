@@ -129,7 +129,8 @@ class ClinicController < GenericClinicController
       ["DDE Properties", "/properties/dde_properties_menu"],
       ["Enable Portal", "/properties/portal_properties_menu"],
       ["Activate IDSR Feature", "/properties/creation?value=activate_idsr_feature"],
-      ["Activate Ancestral Residence", "/properties/creation?value=ask_ancestral_details"]
+      ["Activate Ancestral Residence", "/properties/creation?value=ask_ancestral_details"],
+      ["Show Triage Button", "/properties/creation?value=show_triage_button"]
     ]
     render :layout => false
   end
