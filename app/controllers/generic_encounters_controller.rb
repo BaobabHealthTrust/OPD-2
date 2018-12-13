@@ -433,18 +433,20 @@ class GenericEncountersController < ApplicationController
       unless (arv_number_identifier_type != type) and @patient_identifier
         arv_number = identifier[:identifier].strip
         if arv_number.match(/(.*)[A-Z]/i).blank?
-          if params['encounter']['encounter_type_name'] == 'TB REGISTRATION'
-            identifier[:identifier] = "#{PatientIdentifier.site_prefix}-TB-#{arv_number}"
-          else
-            identifier[:identifier] = "#{PatientIdentifier.site_prefix}-ARV-#{arv_number}"
+          if params['encounter']['encounter_type_name']
+            if params['encounter']['encounter_type_name'] == 'TB REGISTRATION'
+              identifier[:identifier] = "#{PatientIdentifier.site_prefix}-TB-#{arv_number}"
+            else
+              identifier[:identifier] = "#{PatientIdentifier.site_prefix}-ARV-#{arv_number}"
+            end
           end
-        end
+        end if (params['encounter']['encounter_type_name'] != "REGISTRATION")
       end
 
       if @patient_identifier
         @patient_identifier.update_attributes(identifier.permit!)
       else
-        @patient_identifier = @patient.patient_identifiers.create(identifier.permit!)
+        @patient_identifier = @patient.patient_identifiers.create(identifier.permit!) unless identifier["identifier"].blank?
       end
     end
 
