@@ -442,9 +442,9 @@ class GenericEncountersController < ApplicationController
       end
 
       if @patient_identifier
-        @patient_identifier.update_attributes(identifier)
+        @patient_identifier.update_attributes(identifier.permit!)
       else
-        @patient_identifier = @patient.patient_identifiers.create(identifier)
+        @patient_identifier = @patient.patient_identifiers.create(identifier.permit!)
       end
     end
 
