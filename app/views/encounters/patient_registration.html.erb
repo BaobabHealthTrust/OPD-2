@@ -113,6 +113,12 @@
         return new Date(intyear, intmonth, intday);
     }
 
+
+    function updateMalawiNationalIDValue(){
+        value = __$('touchscreenInput'+tstCurrentPage).value;
+        __$("identifier").value = value;
+    }
+
 </script>
 
 <style>
@@ -173,6 +179,12 @@
   <%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
   <%= hidden_field_tag "encounter[provider_id]", current_user.user_id %>
 
+  <% malawi_national_identifier_type = PatientIdentifierType.find_by_name("MALAWI NATIONAL ID") %>
+  <%= hidden_field_tag "identifiers[][identifier_type]", malawi_national_identifier_type.id %>
+  <%= hidden_field_tag "identifiers[][patient_id]", @patient.id %>
+  <%= hidden_field_tag "identifiers[][patient_identifier_id]", "" %>
+  <%= hidden_field_tag "identifiers[][identifier]", "", {:id => "identifier"} %>
+
   <%= (touch_select_tag "TYPE OF VISIT", @patient, options_for_select(visit_types),
                         {:id => "type_of_visit",
                          :tt_pageStyleClass => "NoKeyboard",
@@ -186,6 +198,7 @@
   } %>
 
   <%= text_field_tag "national_id", nil, {
+      :tt_onUnload => "updateMalawiNationalIDValue();",
       :condition => '$("npid").value.match(/YES/i)',
       :helpText => 'National ID'
   } %>
