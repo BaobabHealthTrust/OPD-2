@@ -983,6 +983,58 @@ class GenericReportController < ApplicationController
   end
 
   def process_disaggregated_report
+    @logo = CoreService.get_global_property_value('logo').to_s
+    @current_location_name = Location.current_health_center.name
+
+    @report_name = "Disaggregated Registration Report"
+
+    @start_date = (params[:start_date]).to_date
+    start_date = @start_date
+    @end_date = (params[:end_date]).to_date
+    end_date = @end_date
+
+    @formated_start_date = @start_date.strftime('%A, %d, %b, %Y')
+    @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
+
+    if @start_date > @end_date
+      flash[:notice] = 'Start date is greater that end date'
+      redirect_to :action => 'disaggregated_report_menu' and return
+    end
+
+    @disaggregated_registration={
+        "U5" => {"M"=> 0, "F"=>0},
+        "5-14" => {"M"=> 0, "F"=>0},
+        ">14" => {"M"=> 0, "F"=>0},
+        "< 6 MONTHS" => {"M"=> 0, "F"=>0}
+    }
+
+    person_ids = Person.where(["patient.patient_id IS NOT NULL AND encounter_type.name IN (?) AND person.date_created >= TIMESTAMP(?)
+    AND person.date_created  <= TIMESTAMP(?)", ["TREATMENT","OUTPATIENT DIAGNOSIS"], start_date.strftime('%Y-%m-%d 00:00:00'),
+                           end_date.strftime('%Y-%m-%d 23:59:59')]).joins({:patient=>{:encounters=>{:type=>{}}}}).map(&:person_id).uniq
+
+    person_ids.each do |person_id|
+      person = Person.find(person_id)
+      previous_date = person.date_created.strftime('%Y-%m-%d').to_date
+      sex = person.gender.first.upcase
+      age = PatientService.age(person, previous_date)
+      age_in_months = PatientService.age_in_months(person, previous_date)
+
+      if age_in_months.to_i < 6
+        @disaggregated_registration["< 6 MONTHS"][sex] += 1
+      end
+
+      if (age_in_months.to_i >= 6 && age.to_i < 5)
+        @disaggregated_registration["U5"][sex] += 1
+      end
+
+      if (age.to_i >= 5 and age.to_i <= 14)
+        @disaggregated_registration["5-14"][sex] += 1
+      end
+
+      if (age.to_i > 14)
+        @disaggregated_registration[">14"][sex] += 1
+      end
+    end
 
   end
 
