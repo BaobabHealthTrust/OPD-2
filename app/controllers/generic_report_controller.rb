@@ -887,6 +887,68 @@ class GenericReportController < ApplicationController
     render :layout => "report"
   end
 
+  def newly_registered_report_menu
+    render :layout => "application"
+  end
+
+  def process_newly_registered_report
+    @logo = CoreService.get_global_property_value('logo').to_s
+    @current_location_name = Location.current_health_center.name
+
+    @report_name = "Newly Registered Report"
+
+    @start_date = (params[:start_date]).to_date
+    start_date = @start_date
+    @end_date = (params[:end_date]).to_date
+    end_date = @end_date
+
+    @formated_start_date = @start_date.strftime('%A, %d, %b, %Y')
+    @formated_end_date = @end_date.strftime('%A, %d, %b, %Y')
+
+    if @start_date > @end_date
+      flash[:notice] = 'Start date is greater that end date'
+      redirect_to :action => 'newly_registered_report_menu' and return
+    end
+
+    type_of_visit_concept_id = Concept.find_by_name("TYPE OF VISIT").concept_id
+    new_registered_concept_id = Concept.find_by_name("New").concept_id
+
+    @newly_registered = []
+    observations = Observation.where(["concept_id =? AND value_coded =? AND DATE(obs_datetime) >= ? AND DATE(obs_datetime) <= ?",
+                                      type_of_visit_concept_id, new_registered_concept_id,  start_date, end_date ]).group("person_id")
+    observations.each do | obs |
+      person = Person.find(obs.person_id)
+      patient_bean = PatientService.get_patient(person)
+
+      @newly_registered <<
+            {
+              "name" => patient_bean.name,
+              "birth_date" => patient_bean.birth_date,
+              "sex" => patient_bean.sex,
+              "obs_datetime" => obs.obs_datetime.to_date,
+              "current_residence" => patient_bean.current_residence,
+              "traditional_authority" => patient_bean.traditional_authority
+            }
+    end
+
+  end
+
+  def returning_patients_report_menu
+    render :layout => "application"
+  end
+
+  def process_returning_patients_report
+
+  end
+
+  def disaggregated_report_menu
+    render :layout => "application"
+  end
+
+  def process_disaggregated_report
+
+  end
+
   def drug_report
     @drugs = Drug.where(["name IS NOT NULL"]).collect{|d|[d.name, d.drug_id]}.sort_by{|k, v|k}
     render :layout => "application"

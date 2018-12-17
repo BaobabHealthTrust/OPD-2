@@ -63,7 +63,10 @@ class ClinicController < GenericClinicController
       ["Malaria Report", "/report/malaria_report_menu"],
       ["LA Report", "/report/la_report_menu"],
       ["Drug Report", "/report/drug_report"],
-      ["IDSR Monthly Summary", "/cohort_tool/monthly_idsr_report_menu"]
+      ["IDSR Monthly Summary", "/cohort_tool/monthly_idsr_report_menu"],
+      ["Newly Registered Patients", "/report/newly_registered_report_menu"],
+      ["Returning Patients Report", "/report/returning_patients_report_menu"],
+      ["Disaggregated Registration", "/report/disaggregated_report_menu"]
     ]
     #if allowed_hiv_viewer
     #@reports << ["Patient Level Data", "/cohort_tool/opd_menu?report_name=patient_level_data"]

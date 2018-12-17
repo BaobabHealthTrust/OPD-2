@@ -1,0 +1,27 @@
+<%= javascript_include_tag "prototype" %>
+<%= javascript_include_tag 'jquery' %>
+<%= stylesheet_link_tag 'extra_buttons' %>
+<link href="/stylesheets/opd_cohort.css" media="screen" rel="stylesheet" type="text/css" />
+
+<script>
+    var tt_cancel_destination = '/clinic'
+</script>
+
+<style>
+
+</style>
+
+<form action="/report/process_returning_patients_report"  method='post' >
+  <%= text_field_tag "start_date", nil, {
+      :helpText => 'Start Date',
+      :field_type => 'date',
+      :tt_pageStyleClass => "Numeric NumbersOnly"
+  }  %>
+
+  <%= text_field_tag "end_date", nil, {
+      :helpText => 'End Date',
+      :field_type => 'date',
+      :tt_pageStyleClass => "Numeric NumbersOnly"
+  }  %>
+
+</form>
