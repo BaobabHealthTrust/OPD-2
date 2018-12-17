@@ -1002,10 +1002,10 @@ class GenericReportController < ApplicationController
     end
 
     @disaggregated_registration={
-        "U5" => {"M"=> 0, "F"=>0},
-        "5-14" => {"M"=> 0, "F"=>0},
-        ">14" => {"M"=> 0, "F"=>0},
-        "< 6 MONTHS" => {"M"=> 0, "F"=>0}
+        "U5" => {"M"=> 0, "F"=>0, "patient_ids" => {"M" => [], "F" => []}},
+        "5-14" => {"M"=> 0, "F"=>0, "patient_ids" => {"M" => [], "F" => []}},
+        ">14" => {"M"=> 0, "F"=>0, "patient_ids" => {"M" => [], "F" => []}},
+        "< 6 MONTHS" => {"M"=> 0, "F"=>0, "patient_ids" => {"M" => [], "F" => []}}
     }
 
     person_ids = Person.where(["patient.patient_id IS NOT NULL AND encounter_type.name IN (?) AND person.date_created >= TIMESTAMP(?)
@@ -1021,19 +1021,43 @@ class GenericReportController < ApplicationController
 
       if age_in_months.to_i < 6
         @disaggregated_registration["< 6 MONTHS"][sex] += 1
+        @disaggregated_registration["< 6 MONTHS"]["patient_ids"][sex] << person_id
       end
 
       if (age_in_months.to_i >= 6 && age.to_i < 5)
         @disaggregated_registration["U5"][sex] += 1
+        @disaggregated_registration["U5"]["patient_ids"][sex] << person_id
       end
 
       if (age.to_i >= 5 and age.to_i <= 14)
         @disaggregated_registration["5-14"][sex] += 1
+        @disaggregated_registration["5-14"]["patient_ids"][sex] << person_id
       end
 
       if (age.to_i > 14)
         @disaggregated_registration[">14"][sex] += 1
+        @disaggregated_registration[">14"]["patient_ids"][sex] << person_id
       end
+    end
+
+  end
+
+  def drill_down_disaggregated_registration_patients
+    @logo = CoreService.get_global_property_value('logo').to_s
+    patient_ids = params[:patient_ids].split("|")
+    @report_name = params[:field]
+    @patients = []
+    patient_ids.each do | person_id |
+      person = Person.find(person_id)
+      patient_bean = PatientService.get_patient(person)
+      @patients << {
+                      "name" => patient_bean.name,
+                      "birth_date" => patient_bean.birth_date,
+                      "sex" => patient_bean.sex,
+                      "date_created" => person.date_created.to_date,
+                      "current_residence" => patient_bean.current_residence,
+                      "traditional_authority" => patient_bean.traditional_authority
+      }
     end
 
   end
