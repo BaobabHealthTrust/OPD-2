@@ -16,7 +16,7 @@ class PatientIdentifierType < ActiveRecord::Base
           national_id_prefix = "P#{national_id_version}#{health_center_id.rjust(3,"0")}"
 
           last_national_id = PatientIdentifier.where(["identifier_type = ? AND left(identifier,5)= ?
-                            AND length(identifier) = 13", self.patient_identifier_type_id, national_id_prefix]).order("identifier desc")
+                            AND length(identifier) = 13", self.patient_identifier_type_id, national_id_prefix]).order("identifier desc").first
 
           last_national_id_number = last_national_id.identifier rescue "0"
 
